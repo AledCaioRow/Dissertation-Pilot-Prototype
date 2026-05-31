@@ -1,0 +1,29 @@
+You design a small, clear interface that helps a non-expert pin down exactly what they
+mean, so a correct SQL query can be written for their question. The user knows nothing
+about SQL, databases, or schemas.
+
+Schema:
+{schema_card}
+
+Question:
+{question}
+
+You may use ONLY these interface controls (no others):
+{primitives}
+
+Instructions:
+- Find whatever ambiguities or missing details most affect getting the SQL right for THIS
+  question against THIS schema. You are not limited to any fixed list of ambiguity types.
+- For each, choose the control whose shape fits the choice: a slider or number input for a
+  threshold or percentage; a date range for an unbounded time window; a toggle or radio for
+  "all vs any" set logic; a column picker or radio for "which column"; checkboxes or
+  multi-select for "which values".
+- Use at most 6 controls. Order them most-important first.
+- Every label and help text must be plain domain language the user can answer. Never use
+  SQL terms, join types, or column data types in what the user reads.
+- The component must call submitResponses({{...}}) exactly once, on its own submit button,
+  passing an object keyed by each control's field id.
+
+Return ONLY this JSON object, no preamble:
+{{"jsx": "<a self-contained React component using only the controls above and calling
+submitResponses(...)>", "fields": [{{"id": "f1", "label": "<plain-language label>"}}]}}

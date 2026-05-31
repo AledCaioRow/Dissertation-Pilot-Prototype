@@ -1,0 +1,30 @@
+# Secrets
+.env
+
+# BIRD databases — not committed; the researcher populates these locally.
+bird_data/*
+!bird_data/README.md
+
+# Per-session participant logs (written at runtime)
+session_logs/*.json
+
+# Gold SQL written per question by the researcher (kept out of version control)
+gold_sql/p*_t*.md
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Node / frontend
+node_modules/
+frontend/dist/
+dist/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
