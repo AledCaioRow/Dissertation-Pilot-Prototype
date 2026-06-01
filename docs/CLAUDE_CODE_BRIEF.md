@@ -274,3 +274,11 @@ Type-hint Python; pydantic at boundaries; short functions; informative server lo
 ## 15. Confirm only these
 
 1. `claude-opus-4-7` (confirm if newer Opus shipped). 2. The two BIRD `.sqlite` files (`california_schools`, `financial`) placed at configured paths. 3. Any demographics beyond age band + SQL/DB experience. Otherwise: build, reading each spoke before its part.
+
+---
+
+## Related (knowledge base)
+- [[Home]] — the knowledge-base index (open the repo as an Obsidian vault)
+- Concepts: [[The Experiment C2 vs C3]] · [[One-shot Two-call Interaction]] · [[Stub vs Live]]
+- Build: [[Backend Overview]] · [[Frontend Overview]] · [[Analysis Notebook]]
+- Spokes: [[ambisql_static_interface]] · [[dynamic_interface]] · [[model_prompts]] · [[page_copy]]

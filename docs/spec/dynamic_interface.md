@@ -98,3 +98,9 @@ The model must:
 ## 6. What to log
 
 Per C3 trial: the raw `jsx` (so you can see what was generated), the `fields` manifest, `compile_success`, the participant's submitted values, and (from the call log) the interface-generation token count and latency — the inputs to the C2-vs-C3 cost comparison.
+
+---
+
+## Related (knowledge base)
+- [[C3 Dynamic Host]] (host) · [[C3 Primitives]] (the primitive set) · [[Call 1 Interface Generation]]
+- [[The Experiment C2 vs C3]] · [[ambisql_static_interface]] (the C2 contrast) · [[Home]]

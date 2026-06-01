@@ -1,5 +1,25 @@
 # hitl-text-to-sql — a human-in-the-loop Text-to-SQL study apparatus
 
+## ▶ Open the prototype
+
+- **Hosted (no setup):** **https://aledcaiorow.github.io/My-first-Streamlit-app/** — runs the
+  wizard in standalone demo mode (the **C3** condition shows the blank JSX placeholder slot).
+  This link goes live once the **Deploy prototype** GitHub Action finishes (see the repo's
+  *Actions* tab). If it 404s, the action hasn't run yet, or Pages needs enabling under
+  *Settings → Pages* with source **GitHub Actions**. (If you rename the repo, the URL's last
+  path segment changes to match.)
+- **Local (instant):** `cd frontend && npm install && npm run dev`, then open
+  http://localhost:5173
+
+> The hosted demo is frontend-only (mock data, nothing saved). For the full logged session,
+> run the backend too — see **Setup** below.
+
+📓 **Design knowledge base:** open this repo as an [Obsidian](https://obsidian.md) vault and
+start at [`knowledge-base/Home.md`](knowledge-base/Home.md) — the `.md` notes are wiki-linked
+into a connection graph spanning the specs and the code.
+
+---
+
 This repository is **two halves**. A **web application** (Python/FastAPI backend +
 React/Vite frontend) runs the **live participant session**: it serves a step-through
 wizard, generates and renders clarification interfaces, captures what the participant

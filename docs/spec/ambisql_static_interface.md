@@ -153,3 +153,9 @@ This is the entire C2 interaction: two multiple-choice cards plus an optional te
 ## 8. Logging (for the analysis)
 
 From C2 trials, the log must capture: which `ambiguity_type`s fired, the full options shown per widget, the participant's chosen `value` per widget, and the `additional_constraints` text. This feeds the per-class analysis and lets you compare, for the same ambiguity class, how C2's multiple-choice resolution fared against C3's bespoke control.
+
+---
+
+## Related (knowledge base)
+- [[C2 Static Interface]] (implementation) · [[Call 1 Interface Generation]] · [[The Experiment C2 vs C3]]
+- [[Ambiguity Classes]] · [[dynamic_interface]] (the C3 contrast) · [[Home]]

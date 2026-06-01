@@ -162,3 +162,9 @@ The interface itself is rendered by `C2StaticInterface` or `C3DynamicHost`. Surr
 - The two confidence screens (interface-confidence pre-result, answer-confidence post-result) are separate steps in the wizard, both logged under the trial's `perceived_success`.
 - The persistent footer (contact line + Exit-and-withdraw) appears on every screen from the study-explanation page onward. "Exit and withdraw" marks the session log withdrawn and stops further screens.
 - Authoring prompts are keyed by `(schema, class)` so they line up with `SCHEMA_CLASS_MAP`; the participant sees only the prose, never the class label.
+
+---
+
+## Related (knowledge base)
+- [[Copy]] (the runtime copy.json) · [[Screen Components]] · [[Wizard App]]
+- [[Ambiguity Classes]] · [[Home]]

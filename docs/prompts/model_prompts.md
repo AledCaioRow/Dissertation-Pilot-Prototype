@@ -168,3 +168,9 @@ The participant is shown all three — `interpretation` (as framing), `sql` (ver
 The participant sees the generated SQL next to a confident, results-referencing explanation — even though they cannot read SQL. The overreliance literature predicts this *widens* the perceived-vs-actual gap (they are shown the "evidence" yet cannot verify it), so it is a theoretically motivated probe, not decoration.
 
 **Future direction (not built):** a hidden *pre-execution* explanation (the model explains intent from the SQL alone, before running it) would let you compare pre- vs post-execution confidence. Noted in the report's future work.
+
+---
+
+## Related (knowledge base)
+- [[Call 1 Interface Generation]] · [[Call 2 Query Generation]] · [[Stub Call Layer]]
+- [[Overreliance Probe]] · [[Build Context]] · [[Home]]
