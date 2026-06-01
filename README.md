@@ -111,12 +111,30 @@ python -m backend.execution.run_sql       # runs a smoke query against each DB
 ```bash
 cd frontend
 npm install
-npm run dev        # Vite dev server, proxies /api -> http://localhost:8000
+npm run dev        # Vite dev server on http://localhost:5173, proxies /api -> :8000
 ```
 
-Open the printed URL and click through the wizard. With `USE_STUB = True` the whole
-session works without an API key or the real databases populated (SQL execution will
-report a neutral error if the `.sqlite` files are absent, which the wizard handles).
+Open the printed URL and click through the wizard.
+
+**Two ways to run it:**
+
+- **Standalone (no backend).** Just `npm run dev` and open the page. If the backend isn't
+  reachable, the wizard automatically drops into **demo mode** (a "Demo mode" banner shows):
+  it's served by an in-browser mock (`src/mockApi.js`), nothing is saved, and the **C3
+  condition renders the blank placeholder slot** — the empty panel where the model's
+  generated JSX will be live-mounted. This is the quickest way to see the whole wizard flow.
+- **With the backend (full session).** Start `uvicorn` (step 2) first, then `npm run dev`.
+  Every screen logs to a per-session JSON file. With `USE_STUB = True` it works with no API
+  key; SQL execution returns a neutral, handled message until the `.sqlite` files are present.
+  In this mode C3 mounts the stub's canned JSX in the sandbox (instead of the placeholder),
+  so you can see the dynamic-interface path end to end.
+
+**Where the generated JSX goes (C3).** The model's call-1 output is `{ jsx, fields }`. The
+host (`src/components/C3DynamicHost.jsx`) transpiles `jsx` with Babel-standalone and mounts
+it in the bordered panel, injecting the primitive components (`src/components/c3primitives.jsx`)
+and `submitResponses`. An empty/`placeholder` payload shows the blank slot; a non-empty `jsx`
+that fails to compile falls back to a labelled text-input form. Drop a real `jsx` string into
+the call-1 payload to fill the slot.
 
 ### 4. Analysis (after sessions are collected)
 

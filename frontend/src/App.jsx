@@ -9,7 +9,7 @@
  * interface -> interface-confidence -> (call 2 runs) -> output -> answer-confidence.
  */
 import React from "react";
-import { api } from "./api.js";
+import { api, detectMode } from "./api.js";
 import copy from "./content/copy.json";
 
 import ConsentDetails from "./components/ConsentDetails.jsx";
@@ -68,6 +68,7 @@ export default function App() {
   }, []);
 
   const [assignment, setAssignment] = React.useState(null);
+  const [mode, setMode] = React.useState(null); // "real" | "mock"
   const [fatal, setFatal] = React.useState(null);
   const [withdrawn, setWithdrawn] = React.useState(false);
   const [busy, setBusy] = React.useState(false);
@@ -88,7 +89,15 @@ export default function App() {
   const schemaCacheRef = React.useRef({});
 
   React.useEffect(() => {
-    api.startSession(pid).then((r) => setAssignment(r.assignment)).catch((e) => setFatal(String(e)));
+    (async () => {
+      try {
+        setMode(await detectMode()); // "real" if the backend answers, else "mock"
+        const r = await api.startSession(pid);
+        setAssignment(r.assignment);
+      } catch (e) {
+        setFatal(String(e));
+      }
+    })();
   }, [pid]);
 
   const screens = React.useMemo(() => (assignment ? buildScreens(assignment) : []), [assignment]);
@@ -303,12 +312,29 @@ export default function App() {
   }
 
   const showFooter = !["consent", "screening"].includes(current.type);
-  return <Shell footer={showFooter ? <Footer onWithdraw={doWithdraw} /> : null}>{body}</Shell>;
+  return (
+    <Shell
+      banner={mode === "mock" ? <DemoBanner /> : null}
+      footer={showFooter ? <Footer onWithdraw={doWithdraw} /> : null}
+    >
+      {body}
+    </Shell>
+  );
 }
 
-function Shell({ children, footer }) {
+function DemoBanner() {
+  return (
+    <div className="demo-banner">
+      Demo mode — running without the backend. Data isn’t saved, and the C3 condition shows the
+      blank placeholder slot where the generated interface will mount.
+    </div>
+  );
+}
+
+function Shell({ children, footer, banner }) {
   return (
     <>
+      {banner}
       <div className="wizard">{children}</div>
       {footer}
     </>

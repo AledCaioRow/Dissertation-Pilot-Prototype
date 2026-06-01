@@ -73,6 +73,43 @@ function C3Fallback({ fields, onSubmit }) {
   );
 }
 
+// The blank placeholder slot: shows WHERE the generated JSX will mount, without mounting
+// anything. Used in mock/demo mode (data.placeholder === true). The submit button lets the
+// wizard proceed; it submits the manifest fields with empty values.
+function C3Placeholder({ fields, onSubmit }) {
+  const done = React.useRef(false);
+  const proceed = () => {
+    if (done.current) return;
+    done.current = true;
+    const responses = fields.map((f) => ({ field_id: f.id, label: f.label, value: "" }));
+    onSubmit(responses, null);
+  };
+  return (
+    <div>
+      <div className="c3-placeholder">
+        <div className="ph-tag">C3 · dynamic interface</div>
+        <div className="ph-title">The generated interface will mount here</div>
+        <div className="help">
+          This is the placeholder slot. In the C3 condition the model returns a small custom
+          interface as JSX, and it is live-rendered inside this panel. It hasn’t been generated
+          yet — drop a `jsx` string into the call-1 payload (or run the backend stub) and it
+          appears here.
+        </div>
+        {fields.length > 0 && (
+          <>
+            <div className="help" style={{ marginTop: 10 }}>It will collect:</div>
+            <ul className="ph-fields">{fields.map((f) => <li key={f.id}>{f.label}</li>)}</ul>
+          </>
+        )}
+      </div>
+      <div className="actions">
+        <span className="spacer" />
+        <button className="primary" onClick={proceed}>Show me the answer</button>
+      </div>
+    </div>
+  );
+}
+
 export default function C3DynamicHost({ data, columns = [], onSubmit }) {
   const fieldsRef = React.useRef(data.fields || []);
   fieldsRef.current = data.fields || [];
@@ -104,7 +141,9 @@ export default function C3DynamicHost({ data, columns = [], onSubmit }) {
 
   return (
     <SchemaColumnsContext.Provider value={columns}>
-      {compiled.error ? (
+      {data.placeholder ? (
+        <C3Placeholder fields={data.fields || []} onSubmit={onSubmit} />
+      ) : compiled.error ? (
         fallback
       ) : (
         <ErrorBoundary fallback={fallback}>
