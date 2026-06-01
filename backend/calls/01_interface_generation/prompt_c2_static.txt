@@ -1,0 +1,15 @@
+[PLACEHOLDER: C2 clarification-detection prompt body.
+Replace this entire block with the full instruction text — system/task description,
+ambiguity taxonomy, per-widget phrasing guidelines, and any few-shot examples.
+Keep the structural placeholders and output contract below unchanged.]
+
+Schema:
+{schema_card}
+
+Question:
+{question}
+
+Return ONLY this JSON object, no preamble:
+{{"widgets": [{{"id": "amb_1", "ambiguity_type": "<one type above>", "title": "...",
+"description": "...", "options": [{{"value": "...", "label": "...", "snippet": "..."}}]}}],
+"allow_additional_constraints": true}}

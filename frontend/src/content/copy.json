@@ -1,0 +1,181 @@
+{
+  "nav": { "back": "Back", "next": "Next" },
+
+  "mode": {
+    "heading": "Set-up",
+    "body": "Choose how the system should answer for this session. This page is for whoever is running the study; the participant starts on the next screen.",
+    "stub_label": "Stubbed (offline demo)",
+    "stub_help": "Canned, hard-coded responses. No API key needed. Use this to demo or test the full wizard.",
+    "live_label": "Live API",
+    "live_help": "Calls the real model using the Anthropic key in backend/.env.",
+    "live_warning": "Live mode needs ANTHROPIC_API_KEY in backend/.env and the real API call implemented (it is currently a stub). Until then, choose Stubbed.",
+    "button": "Continue"
+  },
+
+  "footer": {
+    "contact": "Questions? Contact {researcher name / email}.",
+    "exit": "Exit and withdraw",
+    "exit_confirm": "Are you sure you want to exit and withdraw? Your session will stop here."
+  },
+
+  "consent": {
+    "heading": "Before we start",
+    "body": "PLACEHOLDER: consent text",
+    "checkboxes": [
+      "PLACEHOLDER: consent item 1",
+      "PLACEHOLDER: consent item 2",
+      "PLACEHOLDER: consent item 3",
+      "PLACEHOLDER: consent item 4"
+    ],
+    "name_label": "Name (for consent records only)",
+    "email_label": "Contact email (for withdrawal requests)",
+    "pid_label": "Participant ID",
+    "button": "Begin"
+  },
+
+  "screening": {
+    "heading": "A little about you",
+    "body": "PLACEHOLDER: screening introduction text",
+    "age_band": {
+      "label": "Which age band are you in?",
+      "options": ["18–24", "25–34", "35–44", "45–54", "55–64", "65+", "Prefer not to say"]
+    },
+    "sql_experience": {
+      "label": "How much experience do you have writing database queries (for example SQL)?",
+      "options": ["None at all", "A little", "A fair amount", "A lot"]
+    },
+    "db_experience": {
+      "label": "How often do you work with databases or spreadsheets of records?",
+      "options": ["Never", "Occasionally", "Regularly", "Daily"]
+    },
+    "button": "Next"
+  },
+
+  "study_explanation": {
+    "heading": "What you'll be doing",
+    "body": "PLACEHOLDER: study explanation text",
+    "button": "Next"
+  },
+
+  "db_intro": {
+    "california_schools": {
+      "heading": "The schools records",
+      "body": "PLACEHOLDER: database explanation text — california_schools",
+      "button": "Next"
+    },
+    "financial": {
+      "heading": "The bank records",
+      "body": "PLACEHOLDER: database explanation text — financial",
+      "button": "Next"
+    }
+  },
+
+  "authoring": {
+    "intro": "Here is the collection of records you'll be asking about. Have a quick look, then write your question below.",
+    "question_label": "Your question, in your own words",
+    "intent_label": "A quick note for us",
+    "nudge": "Could you write a little more?",
+    "button": "Next",
+    "california_schools:schema_reference": {
+      "task": "PLACEHOLDER: authoring prompt for california_schools / schema_reference",
+      "then": "PLACEHOLDER: intent prompt for california_schools / schema_reference"
+    },
+    "california_schools:superlative_metric": {
+      "task": "PLACEHOLDER: authoring prompt for california_schools / superlative_metric",
+      "then": "PLACEHOLDER: intent prompt for california_schools / superlative_metric"
+    },
+    "financial:value_reference": {
+      "task": "PLACEHOLDER: authoring prompt for financial / value_reference",
+      "then": "PLACEHOLDER: intent prompt for financial / value_reference"
+    },
+    "financial:temporal_window": {
+      "task": "PLACEHOLDER: authoring prompt for financial / temporal_window",
+      "then": "PLACEHOLDER: intent prompt for financial / temporal_window"
+    }
+  },
+
+  "loading": {
+    "heading": "One moment",
+    "body": "PLACEHOLDER: loading body text"
+  },
+
+  "interface": {
+    "standing_instruction": "PLACEHOLDER: standing instruction text",
+    "submit_label": "Show me the answer",
+    "additional_constraints_label": "Anything else to add? (optional)",
+    "skip_note": "PLACEHOLDER: skip note text"
+  },
+
+  "interface_confidence": {
+    "question": "PLACEHOLDER: interface confidence question",
+    "options": ["Yes, completely", "Mostly", "Partly", "Not really", "No"]
+  },
+
+  "output": {
+    "heading": "Here's the answer",
+    "body": "PLACEHOLDER: output body text",
+    "explanation_heading": "In plain words",
+    "sql_heading": "The request the system built for you",
+    "error": "PLACEHOLDER: error message text",
+    "empty": "PLACEHOLDER: empty result message",
+    "button": "Next"
+  },
+
+  "answer_confidence": {
+    "wanted_question": "PLACEHOLDER: answer wanted question",
+    "wanted_options": ["Yes", "No"],
+    "confidence_question": "PLACEHOLDER: answer confidence question",
+    "confidence_options": ["Not at all", "Slightly", "Moderately", "Very", "Completely"],
+    "button": "Next"
+  },
+
+  "questionnaire": {
+    "heading": "PLACEHOLDER: questionnaire heading",
+    "scale": ["Strongly disagree", "Disagree", "Neither", "Agree", "Strongly agree"],
+    "sus_intro": "PLACEHOLDER: SUS introduction",
+    "sus_items": [
+      "PLACEHOLDER: SUS item 1",
+      "PLACEHOLDER: SUS item 2",
+      "PLACEHOLDER: SUS item 3",
+      "PLACEHOLDER: SUS item 4",
+      "PLACEHOLDER: SUS item 5",
+      "PLACEHOLDER: SUS item 6",
+      "PLACEHOLDER: SUS item 7",
+      "PLACEHOLDER: SUS item 8",
+      "PLACEHOLDER: SUS item 9",
+      "PLACEHOLDER: SUS item 10"
+    ],
+    "agency_intro": "PLACEHOLDER: agency items introduction",
+    "agency_items": [
+      "PLACEHOLDER: agency item 1",
+      "PLACEHOLDER: agency item 2",
+      "PLACEHOLDER: agency item 3",
+      "PLACEHOLDER: agency item 4"
+    ],
+    "open_intro": "PLACEHOLDER: open-ended introduction",
+    "open_items": [
+      "PLACEHOLDER: open item 1",
+      "PLACEHOLDER: open item 2",
+      "PLACEHOLDER: open item 3"
+    ],
+    "button": "Next"
+  },
+
+  "debrief": {
+    "heading": "Last few questions",
+    "preference_question": "Which of the two ways of asking did you prefer overall?",
+    "preference_options": ["The first", "The second", "No preference"],
+    "open_items": [
+      "PLACEHOLDER: debrief open item 1",
+      "PLACEHOLDER: debrief open item 2",
+      "PLACEHOLDER: debrief open item 3"
+    ],
+    "button": "Finish",
+    "final": "PLACEHOLDER: debrief closing text"
+  },
+
+  "withdrawn": {
+    "heading": "You've withdrawn",
+    "body": "Your session has been stopped and marked withdrawn. Thank you for your time."
+  }
+}

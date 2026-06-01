@@ -1,0 +1,21 @@
+[PLACEHOLDER: Query generation + post-execution explanation prompt body.
+Replace this entire block with the full instruction text — SQL generation rules,
+two-step structure (generate → execute → explain), and explanation guidelines.
+Keep the structural placeholders and output contract below unchanged.]
+
+Schema:
+{schema_card}
+
+Original question:
+{question}
+
+The user clarified:
+{clarifications}
+
+The query was run and returned {row_count} row(s). Sample:
+{rows_sample}
+
+Return ONLY this JSON object, no preamble:
+{{"interpretation": "<one-line restatement of what the user means, after their
+clarifications>", "sql": "<single SQLite query>", "explanation": "<one short plain-language
+paragraph describing the actual result>"}}

@@ -1,0 +1,17 @@
+[PLACEHOLDER: C3 bespoke-interface generation prompt body.
+Replace this entire block with the full instruction text — design principles, control
+selection rules, labelling guidelines, and any few-shot examples.
+Keep the structural placeholders and output contract below unchanged.]
+
+Schema:
+{schema_card}
+
+Question:
+{question}
+
+Available controls:
+{primitives}
+
+Return ONLY this JSON object, no preamble:
+{{"jsx": "<a self-contained React component using only the controls above and calling
+submitResponses(...)>", "fields": [{{"id": "f1", "label": "<plain-language label>"}}]}}
