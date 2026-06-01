@@ -20,12 +20,12 @@
 
   "consent": {
     "heading": "Before we start",
-    "body": "Thank you for taking part. This study looks at how people ask questions of a computer system to get information out of a database. You do not need to know anything about databases or computing. The session takes about 75–90 minutes.",
+    "body": "PLACEHOLDER: consent text",
     "checkboxes": [
-      "I confirm I have read and understood the information sheet.",
-      "I understand my participation is voluntary and I may stop at any time, including asking for my session recording to be deleted, without giving a reason.",
-      "I understand the session will be audio-recorded and that my data will be stored securely and anonymised.",
-      "I agree to take part."
+      "PLACEHOLDER: consent item 1",
+      "PLACEHOLDER: consent item 2",
+      "PLACEHOLDER: consent item 3",
+      "PLACEHOLDER: consent item 4"
     ],
     "name_label": "Name (for consent records only)",
     "email_label": "Contact email (for withdrawal requests)",
@@ -35,7 +35,7 @@
 
   "screening": {
     "heading": "A little about you",
-    "body": "Just a couple of quick questions before we begin. There are no right answers.",
+    "body": "PLACEHOLDER: screening introduction text",
     "age_band": {
       "label": "Which age band are you in?",
       "options": ["18–24", "25–34", "35–44", "45–54", "55–64", "65+", "Prefer not to say"]
@@ -53,19 +53,19 @@
 
   "study_explanation": {
     "heading": "What you'll be doing",
-    "body": "You'll look at two different collections of information — think of each like a set of linked tables, the sort of thing an organisation keeps its records in. For each one, we'll ask you to come up with a couple of questions you'd genuinely want answered, in your own words. A computer system will then try to help you turn each question into a precise request and show you an answer. After each set, we'll ask what you thought. There are no right or wrong questions, and nothing here is a test of you — we're testing the system. You'll do this on your own, at your own pace.",
+    "body": "PLACEHOLDER: study explanation text",
     "button": "Next"
   },
 
   "db_intro": {
     "california_schools": {
       "heading": "The schools records",
-      "body": "This collection is about schools in California — each school's details, its exam (SAT) results, and figures on how many pupils qualify for free or reduced-price meals. Imagine you work in a schools district office and someone's asked you to pull together some figures.",
+      "body": "PLACEHOLDER: database explanation text — california_schools",
       "button": "Next"
     },
     "financial": {
       "heading": "The bank records",
-      "body": "This collection is about a bank — its customers, their accounts, the cards and loans on those accounts, and the transactions that go through them. Imagine you're an analyst at the bank answering a question from a manager.",
+      "body": "PLACEHOLDER: database explanation text — financial",
       "button": "Next"
     }
   },
@@ -77,86 +77,86 @@
     "nudge": "Could you write a little more?",
     "button": "Next",
     "california_schools:schema_reference": {
-      "task": "Working in the district office, write a question that compares schools using how well their pupils did — but you decide what \"did well\" should mean here. Make it a question that needs you to bring schools and their results together.",
-      "then": "Which schools are you expecting to come back, and why?"
+      "task": "PLACEHOLDER: authoring prompt for california_schools / schema_reference",
+      "then": "PLACEHOLDER: intent prompt for california_schools / schema_reference"
     },
     "california_schools:superlative_metric": {
-      "task": "Write a question asking for the top school (or top few schools) by some measure of your choosing, in a particular area of California.",
-      "then": "What exactly would count as \"the top\" for you, and how many schools did you expect?"
+      "task": "PLACEHOLDER: authoring prompt for california_schools / superlative_metric",
+      "then": "PLACEHOLDER: intent prompt for california_schools / superlative_metric"
     },
     "financial:value_reference": {
-      "task": "As the bank analyst, write a question about a particular kind of transaction or a particular place (a district), and which customers or accounts it involves.",
-      "then": "Describe in plain words what you're trying to find."
+      "task": "PLACEHOLDER: authoring prompt for financial / value_reference",
+      "then": "PLACEHOLDER: intent prompt for financial / value_reference"
     },
     "financial:temporal_window": {
-      "task": "As the bank analyst, write a question about activity over some period of time that you describe in your own words (for example \"recently\", \"last year\", \"over the summer\"), involving accounts and their transactions.",
-      "then": "What period did you have in mind, and what answer are you expecting?"
+      "task": "PLACEHOLDER: authoring prompt for financial / temporal_window",
+      "then": "PLACEHOLDER: intent prompt for financial / temporal_window"
     }
   },
 
   "loading": {
     "heading": "One moment",
-    "body": "The system is preparing a few questions to make sure it understands exactly what you mean…"
+    "body": "PLACEHOLDER: loading body text"
   },
 
   "interface": {
-    "standing_instruction": "Answer these to help the system understand exactly what you mean.",
+    "standing_instruction": "PLACEHOLDER: standing instruction text",
     "submit_label": "Show me the answer",
     "additional_constraints_label": "Anything else to add? (optional)",
-    "skip_note": "The system had no further questions for this one."
+    "skip_note": "PLACEHOLDER: skip note text"
   },
 
   "interface_confidence": {
-    "question": "Before you see the answer — do you feel this captured what you were asking for?",
+    "question": "PLACEHOLDER: interface confidence question",
     "options": ["Yes, completely", "Mostly", "Partly", "Not really", "No"]
   },
 
   "output": {
     "heading": "Here's the answer",
-    "body": "Based on what you told the system, here's what it found.",
+    "body": "PLACEHOLDER: output body text",
     "explanation_heading": "In plain words",
     "sql_heading": "The request the system built for you",
-    "error": "The system couldn't work out an answer to this one. That's useful for us to know — let's carry on.",
-    "empty": "The request ran, but didn't return any rows.",
+    "error": "PLACEHOLDER: error message text",
+    "empty": "PLACEHOLDER: empty result message",
     "button": "Next"
   },
 
   "answer_confidence": {
-    "wanted_question": "Is this the answer you wanted?",
+    "wanted_question": "PLACEHOLDER: answer wanted question",
     "wanted_options": ["Yes", "No"],
-    "confidence_question": "How confident are you that this answer is correct?",
+    "confidence_question": "PLACEHOLDER: answer confidence question",
     "confidence_options": ["Not at all", "Slightly", "Moderately", "Very", "Completely"],
     "button": "Next"
   },
 
   "questionnaire": {
-    "heading": "A few questions about that way of asking",
+    "heading": "PLACEHOLDER: questionnaire heading",
     "scale": ["Strongly disagree", "Disagree", "Neither", "Agree", "Strongly agree"],
-    "sus_intro": "Please say how much you agree with each statement about the system you just used.",
+    "sus_intro": "PLACEHOLDER: SUS introduction",
     "sus_items": [
-      "I think that I would like to use this system frequently.",
-      "I found the system unnecessarily complex.",
-      "I thought the system was easy to use.",
-      "I think that I would need the support of a technical person to be able to use this system.",
-      "I found the various functions in this system were well integrated.",
-      "I thought there was too much inconsistency in this system.",
-      "I would imagine that most people would learn to use this system very quickly.",
-      "I found the system very cumbersome to use.",
-      "I felt very confident using the system.",
-      "I needed to learn a lot of things before I could get going with this system."
+      "PLACEHOLDER: SUS item 1",
+      "PLACEHOLDER: SUS item 2",
+      "PLACEHOLDER: SUS item 3",
+      "PLACEHOLDER: SUS item 4",
+      "PLACEHOLDER: SUS item 5",
+      "PLACEHOLDER: SUS item 6",
+      "PLACEHOLDER: SUS item 7",
+      "PLACEHOLDER: SUS item 8",
+      "PLACEHOLDER: SUS item 9",
+      "PLACEHOLDER: SUS item 10"
     ],
-    "agency_intro": "And a few more.",
+    "agency_intro": "PLACEHOLDER: agency items introduction",
     "agency_items": [
-      "I felt I contributed to the answer the system gave.",
-      "The choices the system asked me to make made sense.",
-      "The interface was simple to use.",
-      "The interface was confusing."
+      "PLACEHOLDER: agency item 1",
+      "PLACEHOLDER: agency item 2",
+      "PLACEHOLDER: agency item 3",
+      "PLACEHOLDER: agency item 4"
     ],
-    "open_intro": "Finally, in your own words:",
+    "open_intro": "PLACEHOLDER: open-ended introduction",
     "open_items": [
-      "What, if anything, was confusing about this way of asking?",
-      "Was there a point where you weren't sure what the system was asking you?",
-      "Anything you'd change about it?"
+      "PLACEHOLDER: open item 1",
+      "PLACEHOLDER: open item 2",
+      "PLACEHOLDER: open item 3"
     ],
     "button": "Next"
   },
@@ -166,12 +166,12 @@
     "preference_question": "Which of the two ways of asking did you prefer overall?",
     "preference_options": ["The first", "The second", "No preference"],
     "open_items": [
-      "Why?",
-      "Was there ever a moment where you weren't sure whether the system had actually given you what you asked for? Tell us about it.",
-      "Anything else you'd like to flag?"
+      "PLACEHOLDER: debrief open item 1",
+      "PLACEHOLDER: debrief open item 2",
+      "PLACEHOLDER: debrief open item 3"
     ],
     "button": "Finish",
-    "final": "Thanks — that's everything. You can close this window now."
+    "final": "PLACEHOLDER: debrief closing text"
   },
 
   "withdrawn": {

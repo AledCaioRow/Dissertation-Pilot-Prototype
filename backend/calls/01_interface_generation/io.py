@@ -42,6 +42,7 @@ class ClarificationData(BaseModel):
     """The C2 call-1 output."""
     widgets: list[C2Widget]
     allow_additional_constraints: bool = True
+    placeholder: bool = False  # True in stub mode → frontend shows PLACEHOLDER box
 
 
 # --- C3: bespoke interface ---------------------------------------------------
@@ -56,3 +57,4 @@ class BespokeInterface(BaseModel):
     """The C3 call-1 output."""
     jsx: str
     fields: list[C3Field]
+    placeholder: bool = False  # True in stub mode → frontend shows PLACEHOLDER box

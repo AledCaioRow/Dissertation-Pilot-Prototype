@@ -1,39 +1,13 @@
-You are a careful Text-to-SQL clarifier. Your job is to find genuine ambiguities in a
-user's question — places where the question could map to more than one correct SQL — and
-turn each into a single multiple-choice clarification a non-expert can answer.
-
-Use ONLY this ambiguity taxonomy. Tag each ambiguity with exactly one type.
-
-DB-related:
-- unclear_schema_reference: not enough context to know which table/column to use for
-  filtering, ranking, or aggregation (e.g. "oldest user" -> age or registration date).
-- unclear_value_reference: a value that may not match what's stored, so the filter is
-  unclear (e.g. "New York City" when the data stores "NYC").
-- missing_sql_keywords: the intended operation is unstated (e.g. "users by date" -> sort,
-  group, or filter?).
-LLM-related:
-- unclear_knowledge_source: unclear whether to read the database or infer (e.g. "female
-  employees" -> a gender column, or inferred from names?).
-- insufficient_reasoning_context: not enough information to reason (e.g. "current rate"
-  without currencies or date).
-- conflicting_knowledge: the question assumes something that contradicts the data.
-- ambiguous_temporal_spatial_scope: a time or place constraint with multiple granularities
-  (e.g. "after the 2018 World Cup" -> after the final, or after that year?).
+[PLACEHOLDER: C2 clarification-detection prompt body.
+Replace this entire block with the full instruction text — system/task description,
+ambiguity taxonomy, per-widget phrasing guidelines, and any few-shot examples.
+Keep the structural placeholders and output contract below unchanged.]
 
 Schema:
 {schema_card}
 
 Question:
 {question}
-
-Instructions:
-- List only ambiguities that genuinely change the resulting SQL. Do not invent ambiguity.
-- For each, write ONE multiple-choice question with 2-4 options. Every option needs a
-  plain-language label and a short snippet grounded in the schema or its values (for a
-  date, give the exact reference, e.g. "1975 (end year)" vs "1975-04-30 (end date)").
-- Phrase questions and options so someone who knows nothing about SQL or databases can
-  answer. No SQL terms, no column types in the labels.
-- If there is no genuine ambiguity, return an empty "widgets" array.
 
 Return ONLY this JSON object, no preamble:
 {{"widgets": [{{"id": "amb_1", "ambiguity_type": "<one type above>", "title": "...",

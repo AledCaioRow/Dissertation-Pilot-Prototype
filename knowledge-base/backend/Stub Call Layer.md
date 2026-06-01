@@ -17,8 +17,8 @@ go live is marked `# TODO: replace stub with real Anthropic call`.
    a real Anthropic message (same `.content`/`.usage` shape), with a tenacity retry wrapper.
 4. **Live branch (the TODO):** it would call the real Anthropic Messages API with the key from
    `backend/.env`; same return shape, so callers don't change.
-5. Canned payloads: C2 widgets; a **realistic, db-specific C3 interface** (a `top schools` control
-   set for california_schools, a date-range/transaction set for financial); query SQL (table-free so
-   it runs without the BIRD DBs); the post-execution explanation; and the C1 baseline SQL.
+5. Canned payloads: C2 → empty widgets + `placeholder: true`; C3 → empty jsx + `placeholder: true`
+   (both trigger a labelled PLACEHOLDER box in the frontend, no mock content); query SQL (table-free
+   so it runs without the BIRD DBs); the post-execution explanation; and the C1 baseline SQL.
 
 **Connected:** [[Call 1 Interface Generation]] · [[Call 2 Query Generation]] · [[Conditions C1 C2 C3]] · [[Stub vs Live]] · [[C3 Dynamic Host]]

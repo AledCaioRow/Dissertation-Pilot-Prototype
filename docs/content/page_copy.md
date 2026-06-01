@@ -1,5 +1,13 @@
 # Spoke: page copy
 
+> **PLACEHOLDER STATUS:** All participant-facing prose in `frontend/src/content/copy.json`
+> has been stripped to clearly-labelled PLACEHOLDERs (e.g. `"PLACEHOLDER: consent text"`).
+> The spec below is the design reference and initial content intent; fill in the actual
+> wording in `copy.json` before running participants. Structural keys (labels, buttons,
+> option lists) are left intact.
+
+# Spoke: page copy (spec reference)
+
 Canonical spec and initial content for everything the participant reads. Becomes `frontend/src/content/copy.json`, loaded by the frontend so wording is a one-file edit with no code change. British English throughout. Deliberately bland and jargon-free — participants know nothing about SQL, databases, or schemas.
 
 The wizard is a step-through: one idea per screen, a visible **Back** button on every screen except where noted (consent, loading, and submitted questionnaires are not reversible).

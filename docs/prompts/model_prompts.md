@@ -1,5 +1,13 @@
 # Spoke: model prompts
 
+> **PLACEHOLDER STATUS:** The prompt bodies in the runtime `.txt` files
+> (`backend/calls/*/prompt*.txt`) have been stripped to clearly-labelled PLACEHOLDERs.
+> Only the structural format strings (`{schema_card}`, `{question}`, etc.) and the
+> output contracts remain. Fill in the instruction text in each `.txt` file before going
+> live — the spec below is the design reference, not the actual prompt wording.
+
+# Spoke: model prompts (spec reference)
+
 Canonical spec and initial content for the model-call prompts. Each becomes a runtime-loaded `.txt` file under `backend/calls/<call>/`. Placeholders use `{name}` and are documented per prompt. Output-format and parsing rules are authoritative — match them in the corresponding `io.py`.
 
 There are **three** prompts: C2 detection (call 1), C3 generation (call 1), and the shared query-generation-plus-explanation (call 2). There is no call 3.

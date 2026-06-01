@@ -27,6 +27,31 @@ import AgencyItems from "./components/AgencyItems.jsx";
 import Debrief from "./components/Debrief.jsx";
 import { Footer } from "./components/ui.jsx";
 
+// ============================================================
+// DEV SKIP CONFIG
+// Set SKIP_ALL = true to make every wizard phase skippable at
+// once. Or set individual phase flags to true for finer control.
+// A yellow "DEV: skip →" button appears at the top of each
+// skippable screen. Default: all false (full participant flow).
+// See README for documentation.
+// ============================================================
+const SKIP_ALL = false;
+const SKIP_CONFIG = {
+  mode:          SKIP_ALL,
+  consent:       SKIP_ALL,
+  screening:     SKIP_ALL,
+  study:         SKIP_ALL,
+  db_intro:      SKIP_ALL,
+  author:        SKIP_ALL,
+  loading:       SKIP_ALL,
+  interface:     SKIP_ALL,
+  iface_conf:    SKIP_ALL,
+  output:        SKIP_ALL,
+  ans_conf:      SKIP_ALL,
+  questionnaire: SKIP_ALL,
+  debrief:       SKIP_ALL,
+};
+
 const slotKey = (s) => `${s.database}:${s.ambiguity_class}`;
 const qualifiedColumns = (schema) =>
   schema ? schema.tables.flatMap((t) => t.columns.map((c) => `${t.name}.${c.name}`)) : [];
@@ -205,6 +230,25 @@ export default function App() {
     setWithdrawn(true);
   };
 
+  // Skip helper for the loading screen: synthesises interface data so downstream
+  // screens (interface, output) have something to render without a real API call.
+  const skipLoadingDirect = async (slot) => {
+    try {
+      const map = await ensureTrials();
+      const t = map[slotKey(slot)];
+      const schema = await loadSchema(slot.database);
+      const syntheticData = t.condition === "C3"
+        ? { jsx: "", fields: [], placeholder: true }
+        : { widgets: [], allow_additional_constraints: false, placeholder: true };
+      onLoadingDone({
+        trial_id: t.trial_id,
+        condition: t.condition,
+        data: syntheticData,
+        columns: qualifiedColumns(schema),
+      });
+    } catch (e) { setFatal(String(e)); }
+  };
+
   // ---------------------------------------------------------------- render
   if (fatal) return <Shell><div className="screen error-box">Something went wrong: {fatal}</div></Shell>;
   if (withdrawn) return <Shell><div className="screen"><h1>{copy.withdrawn.heading}</h1><p>{copy.withdrawn.body}</p></div></Shell>;
@@ -258,31 +302,34 @@ export default function App() {
 
   } else if (current.type === "interface") {
     const t = trials[slotKey(current.slot)];
-    const rt = runtime[t.trial_id] || {};
+    const rt = t ? (runtime[t.trial_id] || {}) : {};
+    const trialId = t?.trial_id;
+    const ifaceData = rt.interface || { placeholder: true, widgets: [], jsx: "", fields: [] };
     body = (
       <div className="screen">
         <p>{copy.interface.standing_instruction}</p>
         <div className="interface-panel">
           {rt.condition === "C3"
-            ? <C3DynamicHost data={rt.interface} columns={rt.columns} onSubmit={onInterfaceSubmit(t.trial_id)} />
-            : <C2StaticInterface data={rt.interface} onSubmit={onInterfaceSubmit(t.trial_id)} />}
+            ? <C3DynamicHost data={ifaceData} columns={rt.columns || []} onSubmit={trialId ? onInterfaceSubmit(trialId) : next} />
+            : <C2StaticInterface data={ifaceData} onSubmit={trialId ? onInterfaceSubmit(trialId) : next} />}
         </div>
       </div>
     );
 
   } else if (current.type === "iface_conf") {
     const t = trials[slotKey(current.slot)];
-    body = <PerceivedSuccess stage="interface" value={runtime[t.trial_id]?.perceived || {}}
-      onChange={setPerceived(t.trial_id)} onSubmit={onIfaceConfSubmit(t.trial_id)} />;
+    body = <PerceivedSuccess stage="interface" value={runtime[t?.trial_id]?.perceived || {}}
+      onChange={t ? setPerceived(t.trial_id) : () => {}} onSubmit={t ? onIfaceConfSubmit(t.trial_id) : next} />;
 
   } else if (current.type === "output") {
     const t = trials[slotKey(current.slot)];
-    body = <ResultView result={runtime[t.trial_id].result} onNext={next} />;
+    const result = t ? runtime[t.trial_id]?.result : undefined;
+    body = <ResultView result={result} onNext={next} />;
 
   } else if (current.type === "ans_conf") {
     const t = trials[slotKey(current.slot)];
-    body = <PerceivedSuccess stage="answer" value={runtime[t.trial_id]?.perceived || {}}
-      onChange={setPerceived(t.trial_id)} onSubmit={onAnsConfSubmit(t.trial_id)} />;
+    body = <PerceivedSuccess stage="answer" value={runtime[t?.trial_id]?.perceived || {}}
+      onChange={t ? setPerceived(t.trial_id) : () => {}} onSubmit={t ? onAnsConfSubmit(t.trial_id) : next} />;
 
   } else if (current.type === "questionnaire") {
     const cond = current.condition;
@@ -325,17 +372,41 @@ export default function App() {
   }
 
   const showFooter = !["mode", "consent", "screening"].includes(current.type);
+
+  // Determine the skip action for the current screen (null = no skip button shown).
+  let skipAction = null;
+  if (SKIP_CONFIG[current.type]) {
+    if (current.type === "loading") {
+      skipAction = () => skipLoadingDirect(current.slot);
+    } else {
+      skipAction = next;
+    }
+  }
+
   return (
-    <Shell footer={showFooter ? <Footer onWithdraw={doWithdraw} /> : null}>
+    <Shell footer={showFooter ? <Footer onWithdraw={doWithdraw} /> : null} skipAction={skipAction}>
       {body}
     </Shell>
   );
 }
 
-function Shell({ children, footer }) {
+function Shell({ children, footer, skipAction }) {
   return (
     <>
-      <div className="wizard">{children}</div>
+      <div className="wizard">
+        {skipAction && (
+          <div style={{ textAlign: "right", marginBottom: 6 }}>
+            <button onClick={skipAction} style={{
+              fontSize: "0.72rem", background: "#fffbe6", border: "1px solid #c8a600",
+              borderRadius: 4, padding: "2px 10px", cursor: "pointer", color: "#5a4800",
+              fontFamily: "inherit",
+            }}>
+              DEV: skip →
+            </button>
+          </div>
+        )}
+        {children}
+      </div>
       {footer}
     </>
   );

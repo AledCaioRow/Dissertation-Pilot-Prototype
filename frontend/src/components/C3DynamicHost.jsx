@@ -73,10 +73,7 @@ function C3Fallback({ fields, onSubmit }) {
   );
 }
 
-// The blank placeholder slot: shows WHERE the generated JSX will mount, without mounting
-// anything. Only used for a genuinely empty payload (data.placeholder === true); in normal
-// runs the stub/live call returns real JSX. The submit button lets the wizard proceed; it
-// submits the manifest fields with empty values.
+// Shown when data.placeholder === true (stub mode). Never shows fake content.
 function C3Placeholder({ fields, onSubmit }) {
   const done = React.useRef(false);
   const proceed = () => {
@@ -89,19 +86,12 @@ function C3Placeholder({ fields, onSubmit }) {
     <div>
       <div className="c3-placeholder">
         <div className="ph-tag">C3 · dynamic interface</div>
-        <div className="ph-title">The generated interface will mount here</div>
+        <div className="ph-title">PLACEHOLDER — C3 generated interface goes here</div>
         <div className="help">
-          This is the placeholder slot. In the C3 condition the model returns a small custom
-          interface as JSX, and it is live-rendered inside this panel. It hasn’t been generated
-          yet — drop a `jsx` string into the call-1 payload (or run the backend stub) and it
-          appears here.
+          Supplied by the real API call. In stub mode no interface is generated — this box
+          marks the slot. Set USE_STUB=False and provide ANTHROPIC_API_KEY to see the
+          model-generated JSX rendered here.
         </div>
-        {fields.length > 0 && (
-          <>
-            <div className="help" style={{ marginTop: 10 }}>It will collect:</div>
-            <ul className="ph-fields">{fields.map((f) => <li key={f.id}>{f.label}</li>)}</ul>
-          </>
-        )}
       </div>
       <div className="actions">
         <span className="spacer" />

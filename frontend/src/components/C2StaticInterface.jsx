@@ -36,6 +36,34 @@ export default function C2StaticInterface({ data, onSubmit }) {
     onSubmit(responses);
   };
 
+  // Stub mode: show a labelled PLACEHOLDER box instead of invented widgets.
+  if (data.placeholder) {
+    const submitPlaceholder = () => {
+      if (done.current) return;
+      done.current = true;
+      onSubmit([]);
+    };
+    return (
+      <div>
+        <div className="c3-placeholder">
+          <div className="ph-tag">C2 · static clarifier</div>
+          <div className="ph-title">PLACEHOLDER — C2 clarification interface</div>
+          <div className="help">
+            The real C2 interface is generated here from the model's call-1 output — multiple-choice
+            clarification widgets based on detected ambiguities. In stub mode no content is generated;
+            this box marks the slot. Set USE_STUB=False and provide ANTHROPIC_API_KEY to see actual widgets.
+          </div>
+        </div>
+        <div className="actions">
+          <span className="spacer" />
+          <button className="primary" onClick={submitPlaceholder}>
+            {copy.interface.submit_label}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       {widgets.length === 0 && <p className="muted">{copy.interface.skip_note}</p>}

@@ -8,8 +8,8 @@ Live-mounts the model's generated JSX in a sandbox. **This is where the generate
 **Code:** [`frontend/src/components/C3DynamicHost.jsx`](../../frontend/src/components/C3DynamicHost.jsx)
 
 ## How it works (plain English)
-1. It receives `{ jsx, fields }` from [[Call 1 Interface Generation]] (in stub mode this is a
-   realistic, db-specific interface — see [[Stub Call Layer]]).
+1. It receives `{ jsx, fields, placeholder }` from [[Call 1 Interface Generation]]. In stub mode
+   `placeholder: true` is set and no JSX is generated — the host renders a labelled PLACEHOLDER box.
 2. It transpiles the JSX string with Babel-standalone, then mounts it with a scoped `new Function`,
    injecting `React`, the [[C3 Primitives]], and a `submitResponses` function. The snippet must
    define a component named `Interface`.

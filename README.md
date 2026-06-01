@@ -54,6 +54,60 @@ constant by construction.
 
 ---
 
+## Content status — all invented text is stripped; placeholders throughout
+
+All fabricated/invented content has been removed and replaced with clearly-labelled
+`PLACEHOLDER` strings. Nothing in the wizard shows convincing fake text. The following
+need to be filled in before running participants:
+
+| What | Where | Key(s) |
+|---|---|---|
+| Consent text + 4 checkboxes | `frontend/src/content/copy.json` | `consent.body`, `consent.checkboxes` |
+| Study explanation | `frontend/src/content/copy.json` | `study_explanation.body` |
+| Database intro copy (×2) | `frontend/src/content/copy.json` | `db_intro.california_schools.body`, `db_intro.financial.body` |
+| Authoring prompts + intent nudges (×4) | `frontend/src/content/copy.json` | `authoring.california_schools:schema_reference`, `authoring.california_schools:superlative_metric`, `authoring.financial:value_reference`, `authoring.financial:temporal_window` — `.task` and `.then` sub-keys each |
+| Loading body text | `frontend/src/content/copy.json` | `loading.body` |
+| Interface standing instruction + skip note | `frontend/src/content/copy.json` | `interface.standing_instruction`, `interface.skip_note` |
+| Output body + error + empty messages | `frontend/src/content/copy.json` | `output.body`, `output.error`, `output.empty` |
+| Interface + answer confidence questions | `frontend/src/content/copy.json` | `interface_confidence.question`, `answer_confidence.wanted_question`, `answer_confidence.confidence_question` |
+| Questionnaire heading + SUS intro + 10 SUS items | `frontend/src/content/copy.json` | `questionnaire.heading`, `questionnaire.sus_intro`, `questionnaire.sus_items` (array of 10) |
+| 4 agency items + intro | `frontend/src/content/copy.json` | `questionnaire.agency_intro`, `questionnaire.agency_items` |
+| 3 open-ended items + intro | `frontend/src/content/copy.json` | `questionnaire.open_intro`, `questionnaire.open_items` |
+| 3 debrief open items + closing text | `frontend/src/content/copy.json` | `debrief.open_items`, `debrief.final` |
+| C2 prompt body | `backend/calls/01_interface_generation/prompt_c2_static.txt` | Replace the `[PLACEHOLDER…]` block |
+| C3 prompt body | `backend/calls/01_interface_generation/prompt_c3_bespoke.txt` | Replace the `[PLACEHOLDER…]` block |
+| Query + explanation prompt body | `backend/calls/02_query_generation/prompt.txt` | Replace the `[PLACEHOLDER…]` block |
+
+The C2 and C3 interface stubs (in stub mode) now render a plainly-labelled grey
+PLACEHOLDER box rather than any mock content.
+
+---
+
+## Dev skip flags — bypass wizard phases for testing
+
+To skip wizard phases without going through every screen, open
+`frontend/src/App.jsx` and change line:
+
+```js
+const SKIP_ALL = false;
+```
+to:
+```js
+const SKIP_ALL = true;
+```
+
+This makes a yellow **"DEV: skip →"** button appear at the top of every phase.
+Click it to jump past that screen without filling in any data. Individual phases
+can also be toggled in `SKIP_CONFIG` below `SKIP_ALL`.
+
+The **loading screen** skip is handled specially — it synthesises placeholder
+interface data (placeholder flag, no JSX) so downstream screens (interface, output)
+render their own PLACEHOLDER boxes rather than crashing.
+
+**Default is `SKIP_ALL = false`** — change it back before running participants.
+
+---
+
 ## Scope: the harness is built; the network call is stubbed
 
 Everything here is real **except the Anthropic network call**. The prompts (in
@@ -149,9 +203,9 @@ neutral, handled message until the `.sqlite` files are present.
 **Where the generated JSX goes (C3).** The model's call-1 output is `{ jsx, fields }`. The host
 (`src/components/C3DynamicHost.jsx`) transpiles `jsx` with Babel-standalone and mounts it in the
 bordered panel, injecting the primitive components (`src/components/c3primitives.jsx`) and
-`submitResponses`. In stub mode it returns a realistic, database-specific interface, so C3 renders
-a full clickable interface end to end. A non-empty `jsx` that fails to compile falls back to a
-labelled text-input form; only a genuinely empty payload shows a blank slot.
+`submitResponses`. In stub mode a labelled grey **PLACEHOLDER** box is shown (no mock JSX is generated).
+A non-empty `jsx` that fails to compile falls back to a labelled text-input form; only a genuinely
+empty payload without `placeholder: true` shows that fallback.
 
 ### 4. Analysis (after sessions are collected)
 

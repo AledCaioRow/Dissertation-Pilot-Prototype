@@ -6,6 +6,27 @@ import copy from "../content/copy.json";
 
 export default function ResultView({ result, onNext }) {
   const o = copy.output;
+
+  if (!result) {
+    return (
+      <div className="screen">
+        <h1>{o.heading}</h1>
+        <div className="c3-placeholder">
+          <div className="ph-tag">output</div>
+          <div className="ph-title">PLACEHOLDER — result not yet loaded</div>
+          <div className="help">
+            The query result appears here after the interface is submitted and the answer API
+            call completes. (If you skipped the loading/interface screens, no result was fetched.)
+          </div>
+        </div>
+        <div className="actions">
+          <span className="spacer" />
+          <button className="primary" onClick={onNext}>{o.button}</button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="screen">
       <h1>{o.heading}</h1>
