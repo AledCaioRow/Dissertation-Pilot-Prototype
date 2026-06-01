@@ -60,6 +60,11 @@ class StartReq(BaseModel):
     participant_id: int
 
 
+class ModeReq(BaseModel):
+    participant_id: int
+    use_stub: bool  # page 0: True = canned stub responses, False = live Anthropic call
+
+
 class ConsentReq(BaseModel):
     participant_id: int
     name: str = ""
@@ -159,6 +164,17 @@ def session_start(req: StartReq) -> dict:
     }
 
 
+@app.post("/session/mode")
+def session_mode(req: ModeReq) -> dict:
+    """Page 0: choose the model-call mode for this whole session (stub vs live API)."""
+    session = _session(req.participant_id)
+    _guard_active(session)
+    session.use_stub = req.use_stub
+    slog.save_session(session)
+    print(f"[mode] participant {req.participant_id} -> {'STUB' if req.use_stub else 'LIVE API'}")
+    return {"ok": True, "use_stub": session.use_stub}
+
+
 @app.post("/session/consent")
 def session_consent(req: ConsentReq) -> dict:
     session = _session(req.participant_id)
@@ -224,9 +240,9 @@ def trial_interface(req: InterfaceReq) -> dict:
 
     context = build_context(trial.db_name, trial.question)
     if trial.condition == "C3":
-        interface, record = c3_bespoke.run_interface(context)
+        interface, record = c3_bespoke.run_interface(context, use_stub=session.use_stub)
     else:
-        interface, record = c2_static.run_interface(context)
+        interface, record = c2_static.run_interface(context, use_stub=session.use_stub)
 
     trial.interface = interface.model_dump()
     trial.calls.append(record)
@@ -245,7 +261,7 @@ def trial_answer(req: AnswerReq) -> dict:
 
     context = build_context(trial.db_name, trial.question)
     result, execution, records = _qg.generate_query(
-        context, req.responses, condition=trial.condition
+        context, req.responses, condition=trial.condition, use_stub=session.use_stub
     )
 
     trial.responses = req.responses

@@ -46,6 +46,7 @@ class SessionLog(BaseModel):
     created_at: str = Field(default_factory=_now)
     updated_at: str = Field(default_factory=_now)
     assignment: dict[str, Any] = Field(default_factory=dict)
+    use_stub: bool = Field(default_factory=lambda: config.USE_STUB)  # set on page 0 (stub vs live)
     consent: Optional[dict[str, Any]] = None
     screening: Optional[dict[str, Any]] = None
     trials: list[Trial] = Field(default_factory=list)

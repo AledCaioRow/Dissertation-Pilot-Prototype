@@ -1,6 +1,17 @@
 {
   "nav": { "back": "Back", "next": "Next" },
 
+  "mode": {
+    "heading": "Set-up",
+    "body": "Choose how the system should answer for this session. This page is for whoever is running the study; the participant starts on the next screen.",
+    "stub_label": "Stubbed (offline demo)",
+    "stub_help": "Canned, hard-coded responses. No API key needed. Use this to demo or test the full wizard.",
+    "live_label": "Live API",
+    "live_help": "Calls the real model using the Anthropic key in backend/.env.",
+    "live_warning": "Live mode needs ANTHROPIC_API_KEY in backend/.env and the real API call implemented (it is currently a stub). Until then, choose Stubbed.",
+    "button": "Continue"
+  },
+
   "footer": {
     "contact": "Questions? Contact {researcher name / email}.",
     "exit": "Exit and withdraw",

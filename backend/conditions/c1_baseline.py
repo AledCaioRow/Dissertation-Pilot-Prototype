@@ -30,7 +30,7 @@ Return ONLY this JSON object, no preamble:
 """
 
 
-def run_baseline(db_name: str, question: str) -> dict:
+def run_baseline(db_name: str, question: str, *, use_stub: bool | None = None) -> dict:
     """Answer one authored question with no human. Returns sql, execution, and the call log."""
     context = build_context(db_name, question)
     prompt = _C1_PROMPT.format(schema_card=context.schema_card, question=question)
@@ -39,6 +39,7 @@ def run_baseline(db_name: str, question: str) -> dict:
     msg = _stub.complete(
         kind="c1_baseline", prompt=prompt,
         max_tokens=config.MODEL_MAX_TOKENS_DEFAULT, context=context.as_dict(),
+        use_stub=use_stub,
     )
     latency_ms = int((time.perf_counter() - t0) * 1000)
     raw = msg.content[0].text

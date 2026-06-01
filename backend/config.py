@@ -10,7 +10,14 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-load_dotenv()
+# Paths (defined early so we can load the backend-local .env).
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+BACKEND_DIR = Path(__file__).resolve().parent
+CALLS_DIR = BACKEND_DIR / "calls"
+
+# The Anthropic key (and an optional USE_STUB override) live ONLY in backend/.env — never in
+# the frontend. For this local, supervised study the key stays on the researcher's laptop.
+load_dotenv(BACKEND_DIR / ".env")
 
 # --- Model / API -------------------------------------------------------------
 # Eventual real call target. The harness ships stubbed (USE_STUB below), so this is
@@ -23,9 +30,10 @@ MODEL_TEMPERATURE = 1.0
 API_RETRY_ATTEMPTS = 3
 API_RETRY_BACKOFF_SECONDS = 2
 
-# THE switch. True = every Anthropic call returns a canned, correctly-shaped payload
-# (no API key needed). Flip to False and supply ANTHROPIC_API_KEY to go live.
-USE_STUB = True
+# Default model-call mode. Page 0 of the wizard overrides this PER SESSION at runtime
+# (stub vs live API); this constant is only the default the selector starts on. True = every
+# Anthropic call returns a canned, correctly-shaped payload (no API key needed).
+USE_STUB = os.getenv("USE_STUB", "true").strip().lower() not in ("false", "0", "no")
 
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 
@@ -58,12 +66,6 @@ LOADING_SCREEN_MIN_SECONDS = 2        # fixed loading screen masks C3's longer l
 SESSION_LOG_DIR = os.getenv("SESSION_LOG_DIR", "./session_logs")
 LOG_PROMPTS_VERBATIM = True           # store the fully-interpolated prompt per call
 PILOT_MODE = False
-
-# --- Derived paths -----------------------------------------------------------
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-BACKEND_DIR = Path(__file__).resolve().parent
-CALLS_DIR = BACKEND_DIR / "calls"
-
 
 def db_path(name: str) -> Path:
     """Absolute path to a configured database's .sqlite file."""

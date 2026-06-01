@@ -139,11 +139,6 @@ pre.sql {
 .c3-placeholder .ph-fields { display: inline-block; text-align: left; margin: 6px 0 0; padding-left: 18px; }
 .c3-placeholder .ph-fields li { margin: 2px 0; }
 
-.demo-banner {
-  background: #fff6e5; border-bottom: 1px solid #e9d39a; color: #6b5113;
-  font-size: 0.82rem; text-align: center; padding: 7px 16px;
-}
-
 .nudge { color: #8a5a00; font-size: 0.85rem; margin-top: 4px; }
 .error-box { background: #fbecec; border: 1px solid #e3b7b7; color: #7a2626; padding: 12px 14px; border-radius: 8px; }
 .loading-dots { font-size: 2rem; letter-spacing: 4px; color: var(--accent); }

@@ -23,7 +23,9 @@ BespokeInterface = _io.BespokeInterface
 _CALL = "01_interface_generation"
 
 
-def generate_interface_c2(context: Context) -> Tuple["ClarificationData", CallLogRecord]:
+def generate_interface_c2(
+    context: Context, *, use_stub: bool | None = None
+) -> Tuple["ClarificationData", CallLogRecord]:
     template = load_prompt(_CALL, "prompt_c2_static.txt")
     prompt = template.format(schema_card=context.schema_card, question=context.question)
 
@@ -33,6 +35,7 @@ def generate_interface_c2(context: Context) -> Tuple["ClarificationData", CallLo
         prompt=prompt,
         max_tokens=config.MODEL_MAX_TOKENS_INTERFACE_GEN,
         context=context.as_dict(),
+        use_stub=use_stub,
     )
     latency_ms = int((time.perf_counter() - t0) * 1000)
     raw = msg.content[0].text
@@ -53,7 +56,9 @@ def generate_interface_c2(context: Context) -> Tuple["ClarificationData", CallLo
         return ClarificationData(widgets=[], allow_additional_constraints=True), record
 
 
-def generate_interface_c3(context: Context) -> Tuple["BespokeInterface", CallLogRecord]:
+def generate_interface_c3(
+    context: Context, *, use_stub: bool | None = None
+) -> Tuple["BespokeInterface", CallLogRecord]:
     template = load_prompt(_CALL, "prompt_c3_bespoke.txt")
     prompt = template.format(
         schema_card=context.schema_card,
@@ -67,6 +72,7 @@ def generate_interface_c3(context: Context) -> Tuple["BespokeInterface", CallLog
         prompt=prompt,
         max_tokens=config.MODEL_MAX_TOKENS_INTERFACE_GEN,
         context=context.as_dict(),
+        use_stub=use_stub,
     )
     latency_ms = int((time.perf_counter() - t0) * 1000)
     raw = msg.content[0].text

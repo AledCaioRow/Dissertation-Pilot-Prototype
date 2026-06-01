@@ -34,6 +34,7 @@ def generate_query(
     responses: list[dict],
     *,
     condition: str | None = None,
+    use_stub: bool | None = None,
 ) -> Tuple["QueryGenerationResult", ExecutionResult, list[CallLogRecord]]:
     template = load_prompt(_CALL, "prompt.txt")
     clar = format_clarifications(responses)
@@ -51,6 +52,7 @@ def generate_query(
     msg1 = _stub.complete(
         kind="query_sql", prompt=prompt_sql,
         max_tokens=config.MODEL_MAX_TOKENS_DEFAULT, context=context.as_dict(),
+        use_stub=use_stub,
     )
     lat1 = int((time.perf_counter() - t0) * 1000)
     raw1 = msg1.content[0].text
@@ -84,6 +86,7 @@ def generate_query(
         kind="query_explain", prompt=prompt_explain,
         max_tokens=config.MODEL_MAX_TOKENS_DEFAULT, context=context.as_dict(),
         extra={"sql": sql, "row_count": exec_result.row_count, "success": exec_result.success},
+        use_stub=use_stub,
     )
     lat2 = int((time.perf_counter() - t1) * 1000)
     raw2 = msg2.content[0].text

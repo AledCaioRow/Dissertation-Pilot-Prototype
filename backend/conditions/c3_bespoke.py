@@ -13,6 +13,6 @@ _handler = load_call_module("01_interface_generation", "handler")
 CONDITION = "C3"
 
 
-def run_interface(context: Context):
+def run_interface(context: Context, *, use_stub: bool | None = None):
     """Run call 1 for C3 → (BespokeInterface, CallLogRecord)."""
-    return _handler.generate_interface_c3(context)
+    return _handler.generate_interface_c3(context, use_stub=use_stub)

@@ -74,8 +74,9 @@ function C3Fallback({ fields, onSubmit }) {
 }
 
 // The blank placeholder slot: shows WHERE the generated JSX will mount, without mounting
-// anything. Used in mock/demo mode (data.placeholder === true). The submit button lets the
-// wizard proceed; it submits the manifest fields with empty values.
+// anything. Only used for a genuinely empty payload (data.placeholder === true); in normal
+// runs the stub/live call returns real JSX. The submit button lets the wizard proceed; it
+// submits the manifest fields with empty values.
 function C3Placeholder({ fields, onSubmit }) {
   const done = React.useRef(false);
   const proceed = () => {

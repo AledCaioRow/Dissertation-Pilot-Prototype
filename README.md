@@ -1,22 +1,30 @@
 # hitl-text-to-sql — a human-in-the-loop Text-to-SQL study apparatus
 
-## ▶ Open the prototype
+## How to run the study app
 
-- **Hosted (no setup):** **https://aledcaiorow.github.io/My-first-Streamlit-app/** — runs the
-  wizard in standalone demo mode (the **C3** condition shows the blank JSX placeholder slot).
-  This link goes live once the **Deploy prototype** GitHub Action finishes (see the repo's
-  *Actions* tab). If it 404s, the action hasn't run yet, or Pages needs enabling under
-  *Settings → Pages* with source **GitHub Actions**. (If you rename the repo, the URL's last
-  path segment changes to match.)
-- **Local (instant):** `cd frontend && npm install && npm run dev`, then open
-  http://localhost:5173
+This is a **local, supervised study** — the backend and frontend run together on your machine;
+there is no hosted/online version. One step:
 
-> The hosted demo is frontend-only (mock data, nothing saved). For the full logged session,
-> run the backend too — see **Setup** below.
+- **Windows:** double-click **`start.bat`** (or run `./start.ps1`).
+- **Mac/Linux:** run **`./start.sh`**.
 
-📓 **Design knowledge base:** open this repo as an [Obsidian](https://obsidian.md) vault and
-start at [`knowledge-base/Home.md`](knowledge-base/Home.md) — the `.md` notes are wiki-linked
-into a connection graph spanning the specs and the code.
+The first run installs dependencies; then the backend starts on `http://localhost:8000`, the
+frontend on `http://localhost:5173`, and your browser opens automatically.
+
+It runs in **stub mode out of the box (no API key needed)** — you can click the entire wizard,
+including the **C3** dynamic interface. **Page 0** lets you choose *Stubbed* or *Live API* per
+session.
+
+**Manual fallback** (two terminals): `python -m uvicorn backend.main:app --port 8000`, and
+`npm --prefix frontend run dev`.
+
+**To go live:** copy `backend/.env.example` → `backend/.env`, set `USE_STUB=False` and
+`ANTHROPIC_API_KEY=…` (see *Going live* below). The key stays in the backend, never the browser.
+
+📓 **Design knowledge base:** open the [`knowledge-base/`](knowledge-base/) folder as an
+[Obsidian](https://obsidian.md) vault and start at
+[`knowledge-base/README.md`](knowledge-base/README.md) — the notes are wiki-linked into a
+connection graph spanning the concepts, the code and the specs.
 
 ---
 
@@ -52,9 +60,10 @@ Everything here is real **except the Anthropic network call**. The prompts (in
 editable `.txt` files), the I/O contracts, the React UI, the SQLite execution, the
 counterbalancing and the logging are all real and run end to end. Every model call
 goes through `backend/calls/_stub.py`, which returns a canned payload with the same
-`.content` / `.usage` shape the real Messages API returns. The only thing left to do
-to go live is flip `USE_STUB = False` in `backend/config.py` and provide an API key —
-the call site is marked `# TODO: replace stub with real Anthropic call`.
+`.content` / `.usage` shape the real Messages API returns. Stub-vs-live is chosen
+**per session on page 0** (the default coming from `USE_STUB` in `backend/.env`); the
+only thing left to do to go live is implement the call site marked
+`# TODO: replace stub with real Anthropic call`.
 
 ---
 
@@ -111,7 +120,13 @@ bird_data/financial/financial.sqlite
 
 See `bird_data/README.md`. Paths are configured in `backend/config.py` (`DATABASES`).
 
-### 2. Backend
+### 2. Run it
+
+Use the launch script (top of this README) — it creates the Python virtualenv, installs
+`requirements.txt`, runs `npm install`, and starts both servers. The commands below are only
+needed if you prefer to run things by hand.
+
+Manual backend (optional):
 
 ```bash
 python -m venv .venv && source .venv/bin/activate
@@ -126,35 +141,17 @@ python -m backend.schema.load_schema      # prints each schema card
 python -m backend.execution.run_sql       # runs a smoke query against each DB
 ```
 
-### 3. Frontend
+Manual frontend (optional): `npm --prefix frontend run dev` (Vite on http://localhost:5173,
+proxies `/api` → `:8000`). Open the printed URL and click through the wizard. Every screen logs to
+a per-session JSON file; in stub mode it works with no API key, and SQL execution returns a
+neutral, handled message until the `.sqlite` files are present.
 
-```bash
-cd frontend
-npm install
-npm run dev        # Vite dev server on http://localhost:5173, proxies /api -> :8000
-```
-
-Open the printed URL and click through the wizard.
-
-**Two ways to run it:**
-
-- **Standalone (no backend).** Just `npm run dev` and open the page. If the backend isn't
-  reachable, the wizard automatically drops into **demo mode** (a "Demo mode" banner shows):
-  it's served by an in-browser mock (`src/mockApi.js`), nothing is saved, and the **C3
-  condition renders the blank placeholder slot** — the empty panel where the model's
-  generated JSX will be live-mounted. This is the quickest way to see the whole wizard flow.
-- **With the backend (full session).** Start `uvicorn` (step 2) first, then `npm run dev`.
-  Every screen logs to a per-session JSON file. With `USE_STUB = True` it works with no API
-  key; SQL execution returns a neutral, handled message until the `.sqlite` files are present.
-  In this mode C3 mounts the stub's canned JSX in the sandbox (instead of the placeholder),
-  so you can see the dynamic-interface path end to end.
-
-**Where the generated JSX goes (C3).** The model's call-1 output is `{ jsx, fields }`. The
-host (`src/components/C3DynamicHost.jsx`) transpiles `jsx` with Babel-standalone and mounts
-it in the bordered panel, injecting the primitive components (`src/components/c3primitives.jsx`)
-and `submitResponses`. An empty/`placeholder` payload shows the blank slot; a non-empty `jsx`
-that fails to compile falls back to a labelled text-input form. Drop a real `jsx` string into
-the call-1 payload to fill the slot.
+**Where the generated JSX goes (C3).** The model's call-1 output is `{ jsx, fields }`. The host
+(`src/components/C3DynamicHost.jsx`) transpiles `jsx` with Babel-standalone and mounts it in the
+bordered panel, injecting the primitive components (`src/components/c3primitives.jsx`) and
+`submitResponses`. In stub mode it returns a realistic, database-specific interface, so C3 renders
+a full clickable interface end to end. A non-empty `jsx` that fails to compile falls back to a
+labelled text-input form; only a genuinely empty payload shows a blank slot.
 
 ### 4. Analysis (after sessions are collected)
 
@@ -166,13 +163,14 @@ jupyter notebook analysis/analysis.ipynb
 
 ## Going live (later, by the researcher)
 
-1. Set `USE_STUB = False` in `backend/config.py`.
-2. Put a real key in `.env` (`ANTHROPIC_API_KEY=...`).
-3. Replace the stub at the `# TODO: replace stub with real Anthropic call` site in
-   `backend/calls/_stub.py` with a real `anthropic` Messages call. The stub already
-   returns the same `.content[0].text` / `.usage` shape, so this is a one-spot change.
-4. Confirm `MODEL_NAME` in `backend/config.py` (currently `claude-opus-4-7`; a newer
-   Opus may have shipped — bump it if so).
+1. Copy `backend/.env.example` → `backend/.env`; set `ANTHROPIC_API_KEY=...`. Optionally set
+   `USE_STUB=False` to default to live (or just pick *Live API* on page 0 per session).
+2. Replace the stub at the `# TODO: replace stub with real Anthropic call` site in
+   `backend/calls/_stub.py` with a real `anthropic` Messages call. The stub already returns the
+   same `.content[0].text` / `.usage` shape, so this is a one-spot change. (Until this is done,
+   *Live API* will error and stub remains the working mode.)
+3. Confirm `MODEL_NAME` in `backend/config.py` (currently `claude-opus-4-7`; a newer Opus may
+   have shipped — bump it if so).
 
 ---
 

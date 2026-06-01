@@ -9,9 +9,10 @@
  * interface -> interface-confidence -> (call 2 runs) -> output -> answer-confidence.
  */
 import React from "react";
-import { api, detectMode } from "./api.js";
+import { api } from "./api.js";
 import copy from "./content/copy.json";
 
+import ModeSelect from "./components/ModeSelect.jsx";
 import ConsentDetails from "./components/ConsentDetails.jsx";
 import Screening from "./components/Screening.jsx";
 import StudyExplanation from "./components/StudyExplanation.jsx";
@@ -36,7 +37,7 @@ const loadingMinSeconds = 2;
 const authMinChars = 15;
 
 function buildScreens(assignment) {
-  const screens = [{ type: "consent" }, { type: "screening" }, { type: "study" }];
+  const screens = [{ type: "mode" }, { type: "consent" }, { type: "screening" }, { type: "study" }];
   let lastDb = null;
   assignment.authoring_plan.forEach((slot) => {
     if (slot.database !== lastDb) {
@@ -68,7 +69,8 @@ export default function App() {
   }, []);
 
   const [assignment, setAssignment] = React.useState(null);
-  const [mode, setMode] = React.useState(null); // "real" | "mock"
+  const [useStub, setUseStub] = React.useState(true);   // page-0 choice (stub vs live)
+  const [cfgStub, setCfgStub] = React.useState(true);   // backend default for page 0
   const [fatal, setFatal] = React.useState(null);
   const [withdrawn, setWithdrawn] = React.useState(false);
   const [busy, setBusy] = React.useState(false);
@@ -91,11 +93,16 @@ export default function App() {
   React.useEffect(() => {
     (async () => {
       try {
-        setMode(await detectMode()); // "real" if the backend answers, else "mock"
+        const cfg = await api.getConfig();
+        setCfgStub(!!cfg.stubbed);
+        setUseStub(!!cfg.stubbed);
         const r = await api.startSession(pid);
         setAssignment(r.assignment);
       } catch (e) {
-        setFatal(String(e));
+        setFatal(
+          "Couldn't reach the study backend. Make sure it's running (launch with " +
+          "start.bat on Windows or ./start.sh on Mac/Linux), then reload this page."
+        );
       }
     })();
   }, [pid]);
@@ -206,7 +213,13 @@ export default function App() {
 
   let body = null;
 
-  if (current.type === "consent") {
+  if (current.type === "mode") {
+    body = <ModeSelect defaultUseStub={cfgStub} onSubmit={async (chosen) => {
+      try { await api.setMode(pid, chosen); setUseStub(chosen); next(); }
+      catch (e) { setFatal(String(e)); }
+    }} />;
+
+  } else if (current.type === "consent") {
     body = <ConsentDetails participantId={pid} onSubmit={async (payload) => {
       await api.consent({ participant_id: pid, ...payload }); next();
     }} />;
@@ -311,30 +324,17 @@ export default function App() {
     body = <div className="screen"><h1>Thank you</h1><p>{copy.debrief.final}</p></div>;
   }
 
-  const showFooter = !["consent", "screening"].includes(current.type);
+  const showFooter = !["mode", "consent", "screening"].includes(current.type);
   return (
-    <Shell
-      banner={mode === "mock" ? <DemoBanner /> : null}
-      footer={showFooter ? <Footer onWithdraw={doWithdraw} /> : null}
-    >
+    <Shell footer={showFooter ? <Footer onWithdraw={doWithdraw} /> : null}>
       {body}
     </Shell>
   );
 }
 
-function DemoBanner() {
-  return (
-    <div className="demo-banner">
-      Demo mode — running without the backend. Data isn’t saved, and the C3 condition shows the
-      blank placeholder slot where the generated interface will mount.
-    </div>
-  );
-}
-
-function Shell({ children, footer, banner }) {
+function Shell({ children, footer }) {
   return (
     <>
-      {banner}
       <div className="wizard">{children}</div>
       {footer}
     </>
