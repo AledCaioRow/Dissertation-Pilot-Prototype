@@ -114,6 +114,11 @@ class SessionEnd(BaseModel):
     session_id: str
 
 
+class DemographicsBody(BaseModel):
+    session_id: str
+    demographics: dict
+
+
 # --------------------------------------------------------------------------- #
 # Helpers
 # --------------------------------------------------------------------------- #
@@ -330,6 +335,12 @@ def log(body: LogBody):
         return {"ok": True, "written": 0}
     written = store.save_events(body.events)
     return {"ok": True, "written": written}
+
+
+@app.post("/api/session/demographics")
+def session_demographics(body: DemographicsBody):
+    store.update_demographics(body.session_id, body.demographics)
+    return {"ok": True}
 
 
 @app.post("/api/session/end")

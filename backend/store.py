@@ -167,6 +167,14 @@ def end_session(session_id) -> None:
         conn.execute("UPDATE sessions SET ended_at=? WHERE session_id=?", (_now(), session_id))
 
 
+def update_demographics(session_id, demographics) -> None:
+    with _LOCK, _connect() as conn:
+        conn.execute(
+            "UPDATE sessions SET demographics_json=? WHERE session_id=?",
+            (json.dumps(demographics), session_id),
+        )
+
+
 def save_question(session_id, question_index, text, submitted_at) -> None:
     with _LOCK, _connect() as conn:
         conn.execute(

@@ -1,4 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import { startSession, logEvent, flush, getSessionId, getConditionOrder } from "./lib/log.js";
+import { postJSON } from "./lib/api.js";
+import Chatbot from "./components/Chatbot.jsx";
+import AmbiSQLWizard from "./AmbiSQLWizard.jsx";
+import DynamicHost from "./components/DynamicHost.jsx";
+import OutputStage from "./components/OutputStage.jsx";
+
+// Counterbalancing hook: which written question feeds each condition slot.
+// Default identity (slot 0 -> question 0, ...); expose/randomise for the study.
+const QUESTION_FOR_SLOT = [0, 1, 2];
 
 // ---- Design tokens (matched to the PowerPoint mockup) ----
 const GREY = "#AEAEAE";   // page background
@@ -59,6 +69,16 @@ function BlankSlot({ label }) {
       }}>
         {label}
       </span>
+    </div>
+  );
+}
+
+function Loading({ label }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", background: TEAL, border: BORDER, color: WHITE, fontFamily: FONT, fontSize: 18 }}>
+        {label || "Loading…"}
+      </div>
     </div>
   );
 }
@@ -188,6 +208,17 @@ export default function StudyShell() {
   const [demographics, setDemographics] = useState({ age: "", exp: "", freq: "" });
   const [feedback, setFeedback] = useState({}); // { "feedback-1": {q1, q2, text} }
 
+  // ---- additive study state (does not change the existing UI) ----
+  const [conditionOrder, setConditionOrder] = useState(getConditionOrder());
+  const [questions, setQuestions] = useState(["", "", ""]); // the three written questions
+  const [specs, setSpecs] = useState({});     // C2 ambiguity spec per slot
+  const [dyn, setDyn] = useState({});         // C3 { component_src, ambiguities } per slot
+  const [results, setResults] = useState({}); // finalize result per slot: { loading, error, data }
+  const enterTs = useRef(Date.now());
+  const started = useRef(false);
+  const pending = useRef({});
+  const draftTimer = useRef(null);
+
   const screen = SCREENS[index];
   const isLast = index === SCREENS.length - 1;
   // Back: shown after the first screen, but removed once 3 questions are submitted
@@ -195,15 +226,137 @@ export default function StudyShell() {
   const showBack = index >= 1 && index <= TASK_INDEX && submitted < 3;
   const showForward = !isLast;
 
-  const goBack = () => setIndex((i) => Math.max(0, i - 1));
-  const goForward = () => setIndex((i) => Math.min(SCREENS.length - 1, i + 1));
+  // ---- slot / condition helpers ----
+  const conditionForSlot = (slot) => conditionOrder[slot];
+  const questionForSlot = (slot) => QUESTION_FOR_SLOT[slot];
+  const slotContext = (scr) => {
+    const m = scr.match(/^(interface|output|feedback)-(\d)$/);
+    if (!m) return {};
+    const slot = Number(m[2]) - 1;
+    return { condition: conditionForSlot(slot), question_index: questionForSlot(slot) };
+  };
+  // screen-aware logging helper
+  const L = (type, extra = {}) => logEvent(type, { screen, ...slotContext(screen), ...extra });
+
+  // ---- session start + per-screen dwell logging ----
+  useEffect(() => {
+    if (started.current) return;
+    started.current = true;
+    startSession({})
+      .then((s) => { if (s.condition_order) setConditionOrder(s.condition_order); })
+      .catch((e) => console.warn("session start failed", e)); // eslint-disable-line no-console
+  }, []);
+
+  useEffect(() => {
+    enterTs.current = Date.now();
+    logEvent("screen_enter", { screen, ...slotContext(screen) });
+    return () => {
+      logEvent("screen_leave", { screen, ...slotContext(screen), elapsed_ms: Date.now() - enterTs.current });
+      flush();
+    };
+  }, [screen]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ---- fetch interface data when an interface screen is entered ----
+  useEffect(() => {
+    const m = screen.match(/^interface-(\d)$/);
+    if (!m) return;
+    const slot = Number(m[1]) - 1;
+    const cond = conditionForSlot(slot);
+    const qi = questionForSlot(slot);
+    const q = questions[qi];
+    if (!q || !getSessionId()) return;
+    if (cond === "2" && !specs[slot] && !pending.current[`s${slot}`]) {
+      pending.current[`s${slot}`] = true;
+      postJSON("/api/ambiguities", { session_id: getSessionId(), question_index: qi, question: q })
+        .then((spec) => setSpecs((s) => ({ ...s, [slot]: spec })))
+        .catch((e) => setSpecs((s) => ({ ...s, [slot]: { originalQuestion: q, summary: "", ambiguities: [], error: String(e.message || e) } })));
+    }
+    if (cond === "3" && !dyn[slot] && !pending.current[`d${slot}`]) {
+      pending.current[`d${slot}`] = true;
+      postJSON("/api/dynamic", { session_id: getSessionId(), question_index: qi, question: q })
+        .then((r) => setDyn((d) => ({ ...d, [slot]: r })))
+        .catch((e) => setDyn((d) => ({ ...d, [slot]: { component_src: "", ambiguities: [], error: String(e.message || e) } })));
+    }
+  }, [screen, conditionOrder, questions]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // End the session when the final screen is reached.
+  useEffect(() => {
+    if (screen !== "end") return;
+    const sid = getSessionId();
+    if (sid) postJSON("/api/session/end", { session_id: sid }).catch(() => {});
+  }, [screen]);
+
+  const setSlotResult = (slot, patch) =>
+    setResults((r) => ({ ...r, [slot]: { ...r[slot], ...patch } }));
+
+  const postDemographics = () => {
+    const sid = getSessionId();
+    if (sid) postJSON("/api/session/demographics", { session_id: sid, demographics }).catch(() => {});
+  };
+  const postFeedbackFor = (slot) => {
+    const sid = getSessionId();
+    if (!sid) return;
+    const fb = feedback[`feedback-${slot + 1}`] || {};
+    postJSON("/api/feedback", {
+      session_id: sid, condition: conditionForSlot(slot), question_index: questionForSlot(slot),
+      q1: fb.q1 ?? null, q2: fb.q2 ?? null, text: fb.text || "",
+    }).catch(() => {});
+  };
+
+  const goBack = () => { L("nav_back"); setIndex((i) => Math.max(0, i - 1)); };
+  const goForward = () => {
+    if (screen === "demographics") postDemographics();
+    const fm = screen.match(/^feedback-(\d)$/);
+    if (fm) postFeedbackFor(Number(fm[1]) - 1);
+    L("nav_forward");
+    setIndex((i) => Math.min(SCREENS.length - 1, i + 1));
+  };
+
+  // Run the finaliser for a slot, then advance to its output screen.
+  const runFinalize = async (slot, condition, clarifications) => {
+    setSlotResult(slot, { loading: true, error: null, data: null });
+    goForward();
+    try {
+      const res = await postJSON("/api/finalize", {
+        session_id: getSessionId(), question_index: questionForSlot(slot),
+        condition, clarifications,
+      });
+      setSlotResult(slot, { loading: false, data: res });
+    } catch (e) {
+      setSlotResult(slot, { loading: false, error: String(e.message || e) });
+    }
+  };
+  // C2 finalises inside the wizard; it hands us the result directly.
+  const finishC2 = (slot, result) => {
+    if (result && result.error) setSlotResult(slot, { loading: false, error: result.error });
+    else setSlotResult(slot, { loading: false, data: result });
+    goForward();
+  };
 
   const submitQuestion = () => {
-    setSubmitted((s) => {
-      const next = Math.min(3, s + 1);
-      return next;
-    });
+    const text = draft;
+    const qi = submitted; // 0-based index of the question being submitted
+    setQuestions((qs) => { const n = [...qs]; n[qi] = text; return n; });
+    L("question_submit", { question_index: qi, value: { len: text.length } });
+    const sid = getSessionId();
+    if (sid) {
+      postJSON("/api/questions", {
+        session_id: sid,
+        questions: [{ index: qi, text, submitted_at: new Date().toISOString() }],
+      }).catch(() => {});
+    }
+    setSubmitted((s) => Math.min(3, s + 1));
     setDraft("");
+  };
+
+  const onDraftChange = (e) => {
+    const v = e.target.value;
+    setDraft(v);
+    if (draftTimer.current) clearTimeout(draftTimer.current);
+    draftTimer.current = setTimeout(
+      () => L("question_draft_change", { question_index: submitted, value: { len: v.length } }),
+      500
+    );
   };
 
   // ----- Screen content -----
@@ -246,7 +399,11 @@ export default function StudyShell() {
                 "I agree to take part.",
               ].map((t, i) => (
                 <label key={i} style={{ display: "flex", gap: 12, alignItems: "flex-start", fontSize: 18, marginBottom: 16, lineHeight: 1.4 }}>
-                  <input type="checkbox" style={{ marginTop: 5, width: 18, height: 18 }} />
+                  <input
+                    type="checkbox"
+                    onChange={(e) => L("consent_toggle", { target_id: `consent_${i}`, value: e.target.checked })}
+                    style={{ marginTop: 5, width: 18, height: 18 }}
+                  />
                   <span>{t}</span>
                 </label>
               ))}
@@ -255,7 +412,10 @@ export default function StudyShell() {
         );
 
       case "demographics": {
-        const set = (k) => (e) => setDemographics((d) => ({ ...d, [k]: e.target.value }));
+        const set = (k) => (e) => {
+          setDemographics((d) => ({ ...d, [k]: e.target.value }));
+          L("demographic_select", { target_id: k, value: e.target.value });
+        };
         const selStyle = { width: "100%", padding: "8px 12px", fontFamily: FONT, fontSize: 15, border: BORDER, borderRadius: 0, background: WHITE, marginBottom: 14, boxSizing: "border-box" };
         const q = { fontSize: 16, fontWeight: 700, marginBottom: 6 };
         return (
@@ -350,7 +510,7 @@ export default function StudyShell() {
               <div style={{ display: "flex", gap: 12, alignItems: "stretch" }}>
                 <input
                   value={draft}
-                  onChange={(e) => setDraft(e.target.value)}
+                  onChange={onDraftChange}
                   disabled={done}
                   placeholder="Type your question here (optional — you can skip)…"
                   style={{ flex: 1, padding: "14px 16px", fontFamily: FONT, fontSize: 17, border: BORDER, borderRadius: 0, background: done ? LIGHT : WHITE, boxSizing: "border-box" }}
@@ -371,23 +531,53 @@ export default function StudyShell() {
       case "interface-1":
       case "interface-2":
       case "interface-3": {
-        const n = screen.split("-")[1];
-        const names = { "1": "Chatbot", "2": "AmbiSQL-inspired", "3": "Context-aware" };
-        return (
-          <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-            <BlankSlot label={`Interface ${n} — ${names[n]} (to be built)`} />
-          </div>
-        );
+        const slot = Number(screen.split("-")[1]) - 1;
+        const cond = conditionForSlot(slot);
+        const qi = questionForSlot(slot);
+        const q = questions[qi] || "";
+        if (cond === "1") {
+          return (
+            <Chatbot
+              sessionId={getSessionId()} questionIndex={qi} question={q}
+              onResolve={(transcript) => runFinalize(slot, "1", transcript)}
+              onLog={L}
+            />
+          );
+        }
+        if (cond === "2") {
+          const spec = specs[slot];
+          if (!spec) return <Loading label="Reading your question…" />;
+          return (
+            <AmbiSQLWizard
+              spec={spec} sessionId={getSessionId()} questionIndex={qi}
+              onComplete={(rlog, result) => finishC2(slot, result)}
+              onLog={L}
+            />
+          );
+        }
+        if (cond === "3") {
+          const d = dyn[slot];
+          if (!d) return <Loading label="Preparing your interface…" />;
+          return (
+            <DynamicHost
+              sessionId={getSessionId()} questionIndex={qi} question={q}
+              ambiguities={d.ambiguities} componentSrc={d.component_src}
+              contractVersion={d.contract_version}
+              onResolve={(res) => runFinalize(slot, "3", res)}
+              onLog={L}
+            />
+          );
+        }
+        return null;
       }
 
       case "output-1":
       case "output-2":
       case "output-3": {
-        const n = screen.split("-")[1];
+        const slot = Number(screen.split("-")[1]) - 1;
+        const r = results[slot] || {};
         return (
-          <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-            <BlankSlot label={`Output ${n} — database rows + description (to be built)`} />
-          </div>
+          <OutputStage result={r.data} loading={r.loading} error={r.error} onLog={L} />
         );
       }
 
@@ -395,7 +585,11 @@ export default function StudyShell() {
       case "feedback-2":
       case "feedback-3": {
         const fb = feedback[screen] || {};
-        const setFb = (k, v) => setFeedback((f) => ({ ...f, [screen]: { ...f[screen], [k]: v } }));
+        const setFb = (k, v) => {
+          setFeedback((f) => ({ ...f, [screen]: { ...f[screen], [k]: v } }));
+          if (k === "text") L("feedback_text_change", { value: { len: String(v).length } });
+          else L("feedback_likert_select", { target_id: k, value: v });
+        };
         return (
           <div style={{ maxWidth: 900, margin: "0 auto", width: "100%", color: BLACK }}>
             <h1 style={{ fontSize: 24, fontWeight: 700, margin: "0 0 16px" }}>User feedback</h1>
@@ -455,7 +649,7 @@ export default function StudyShell() {
         <div>{showBack && <ArrowButton dir="back" onClick={goBack} />}</div>
         <div style={{ textAlign: "center" }}>
           <button
-            onClick={() => setConfirming(true)}
+            onClick={() => { L("exit_open"); setConfirming(true); }}
             style={{ background: "none", border: "none", fontFamily: FONT, fontSize: 17, color: BLACK, cursor: "pointer", textDecoration: "underline" }}
           >
             Please click here to exit
@@ -470,8 +664,8 @@ export default function StudyShell() {
           <div style={{ background: WHITE, border: BORDER, padding: 28, width: 360, textAlign: "center" }}>
             <p style={{ fontSize: 20, fontWeight: 700, margin: "0 0 20px" }}>Exit the study?</p>
             <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
-              <button onClick={() => { setConfirming(false); setExited(true); }} style={{ padding: "10px 22px", background: TEAL, color: WHITE, border: BORDER, fontFamily: FONT, fontSize: 16, fontWeight: 700, cursor: "pointer", borderRadius: 0 }}>Yes, exit</button>
-              <button onClick={() => setConfirming(false)} style={{ padding: "10px 22px", background: WHITE, color: BLACK, border: BORDER, fontFamily: FONT, fontSize: 16, cursor: "pointer", borderRadius: 0 }}>Cancel</button>
+              <button onClick={() => { L("exit_confirm"); flush(); const sid = getSessionId(); if (sid) postJSON("/api/session/end", { session_id: sid }).catch(() => {}); setConfirming(false); setExited(true); }} style={{ padding: "10px 22px", background: TEAL, color: WHITE, border: BORDER, fontFamily: FONT, fontSize: 16, fontWeight: 700, cursor: "pointer", borderRadius: 0 }}>Yes, exit</button>
+              <button onClick={() => { L("exit_cancel"); setConfirming(false); }} style={{ padding: "10px 22px", background: WHITE, color: BLACK, border: BORDER, fontFamily: FONT, fontSize: 16, cursor: "pointer", borderRadius: 0 }}>Cancel</button>
             </div>
           </div>
         </div>

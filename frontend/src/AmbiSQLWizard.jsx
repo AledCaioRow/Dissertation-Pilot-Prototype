@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef } from "react";
+import { postJSON } from "./lib/api.js";
 
 /* =============================================================================
    AmbiSQLWizard  —  C2 (AmbiSQL-inspired) condition
@@ -161,8 +162,10 @@ function labelFor(r) {
 /* ===========================================================================
    COMPONENT
    =========================================================================== */
-export default function AmbiSQLWizard({ spec = DEMO_SPEC, onComplete }) {
-  const { originalQuestion, databaseId, ambiguities } = spec;
+export default function AmbiSQLWizard({ spec = DEMO_SPEC, sessionId, questionIndex, onComplete, onLog }) {
+  const { originalQuestion, databaseId, ambiguities, summary } = spec;
+  // Additive logging helper — does not affect the fixed UI.
+  const log = (type, value) => onLog?.(type, { value });
 
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState({}); // id -> { selected, custom, skipped, timeMs }
@@ -209,11 +212,13 @@ export default function AmbiSQLWizard({ spec = DEMO_SPEC, onComplete }) {
   }
 
   function go(skip) {
+    if (amb) log(skip ? "wizard_skip" : "wizard_confirm", { id: amb.id, index });
     const next = record(skip);
     if (index + 1 < total) {
       const ni = index + 1;
       setIndex(ni);
       loadCard(ni);
+      log("wizard_card_enter", { id: ambiguities[ni]?.id, index: ni });
     } else {
       complete(next);
     }
@@ -221,34 +226,80 @@ export default function AmbiSQLWizard({ spec = DEMO_SPEC, onComplete }) {
 
   async function complete(finalAnswers) {
     const resolutions = buildResolutions(ambiguities, finalAnswers);
-    const { rewrittenQuery } = await rewriteQuery(originalQuestion, resolutions, databaseId);
-    const log = {
+    log("wizard_complete", { resolved: resolutions.filter((r) => !r.skipped).length, total: resolutions.length });
+    // Cosmetic local rewrite for the Done screen (the fixed UI shows this).
+    const rewrittenQuery = assembleRewrite(originalQuestion, resolutions);
+    const resolutionLog = {
       originalQuestion,
       databaseId,
       resolutions,
       rewrittenQuery,
       completedAt: new Date().toISOString(),
     };
-    setFinalLog(log);
+    setFinalLog(resolutionLog);
     setFinished(true);
-    onComplete?.(log);
+    // Persist the ResolutionLog, then run the finaliser (continues the C2 window).
+    let result = null;
+    try {
+      if (sessionId != null) {
+        await postJSON("/api/resolution-log", {
+          session_id: sessionId, question_index: questionIndex, log: resolutionLog,
+        });
+        result = await postJSON("/api/finalize", {
+          session_id: sessionId, question_index: questionIndex,
+          condition: "2", clarifications: resolutions,
+        });
+      }
+    } catch (e) {
+      result = { error: String(e.message || e) };
+    }
+    onComplete?.(resolutionLog, result);
   }
 
   function jumpTo(i) {
     if (i === index || finished) return;
+    log("wizard_chip_jump", { from: index, to: i });
     record(false); // bank current card before jumping
     setIndex(i);
     loadCard(i);
+    log("wizard_card_enter", { id: ambiguities[i]?.id, index: i });
   }
 
   // a card is "answerable" if something is chosen OR a custom value typed
   const canConfirm =
-    draftSelected !== null || (amb.allowCustom && draftCustom.trim().length > 0);
+    draftSelected !== null || (amb?.allowCustom && draftCustom.trim().length > 0);
 
   if (finished) return <Done log={finalLog} onComplete={onComplete} />;
 
+  // Nothing was ambiguous: show the summary as a confirm screen, then finish.
+  if (total === 0) {
+    return (
+      <Frame>
+        {summary && (
+          <div style={summaryBox}>
+            <div style={{ fontSize: 12, color: MUTE, marginBottom: 4 }}>We understood your question as</div>
+            <div style={{ fontSize: 17 }}>{summary}</div>
+          </div>
+        )}
+        <div style={card}>
+          <div style={{ fontSize: 16, marginBottom: 14 }}>
+            Nothing in your question was unclear, so there is nothing to resolve.
+          </div>
+          <button onClick={() => complete({})} style={primaryBtn(true)}>Get my answer</button>
+        </div>
+      </Frame>
+    );
+  }
+
   return (
     <Frame>
+      {/* ---- summary of what was understood (additive) ---- */}
+      {summary && (
+        <div style={summaryBox}>
+          <div style={{ fontSize: 12, color: MUTE, marginBottom: 4 }}>We understood your question as</div>
+          <div style={{ fontSize: 16 }}>{summary}</div>
+        </div>
+      )}
       {/* ---- the single active ambiguity card ---- */}
       <div style={card}>
         <div style={cardHead}>
@@ -271,9 +322,15 @@ export default function AmbiSQLWizard({ spec = DEMO_SPEC, onComplete }) {
         <AffordanceSlot
           amb={amb}
           selected={draftSelected}
-          onSelect={(v) => { setDraftSelected(v); }}
+          onSelect={(v) => {
+            setDraftSelected(v);
+            const evt = {
+              toggle: "wizard_toggle_set", dateRange: "wizard_daterange_set", range: "wizard_range_set",
+            }[amb.affordance] || "wizard_option_select";
+            log(evt, { id: amb.id, value: v });
+          }}
           custom={draftCustom}
-          onCustom={(v) => { setDraftCustom(v); if (v) setDraftSelected(null); }}
+          onCustom={(v) => { setDraftCustom(v); if (v) setDraftSelected(null); log("wizard_custom_type", { id: amb.id }); }}
         />
 
         {/* ---- evidence: why this is ambiguous ---- */}
@@ -291,7 +348,7 @@ export default function AmbiSQLWizard({ spec = DEMO_SPEC, onComplete }) {
           </button>
           <button onClick={() => go(true)} style={ghostBtn}>Skip this one</button>
           {index > 0 && (
-            <button onClick={() => jumpTo(index - 1)} style={ghostBtn}>Back</button>
+            <button onClick={() => { log("wizard_back", { from: index }); jumpTo(index - 1); }} style={ghostBtn}>Back</button>
           )}
         </div>
       </div>
@@ -500,6 +557,7 @@ const slotBox = { border: `2px solid ${BLACK}`, padding: 12 };
 const slotLabel = { fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: MUTE, marginBottom: 8 };
 const evidence = { marginTop: 14, fontSize: 13, color: MUTE, background: LIGHT, padding: "8px 10px", borderLeft: `4px solid ${TEAL}` };
 const rewriteBox = { marginTop: 14, background: WHITE, border: `2px dashed ${MUTE}`, padding: "10px 12px" };
+const summaryBox = { marginBottom: 14, background: LIGHT, border: BORDER, padding: "10px 14px" };
 const input = { width: "100%", padding: "10px 12px", fontFamily: FONT, fontSize: 15, border: BORDER, borderRadius: 0, boxSizing: "border-box" };
 const select = { width: "100%", padding: "10px 12px", fontFamily: FONT, fontSize: 15, border: BORDER, borderRadius: 0, background: WHITE, boxSizing: "border-box" };
 const dateInput = { padding: "6px 8px", fontFamily: FONT, fontSize: 14, border: `2px solid ${BLACK}`, borderRadius: 0 };
