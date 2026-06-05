@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Secrets
+backend/.env
+.env
+
+# Logs (generated at runtime)
+backend/logs/*.sqlite
+backend/logs/*.sqlite-*
+backend/logs/*.jsonl
+backend/logs/csv/
+
+# Node / Vite
+node_modules/
+frontend/dist/
+*.log
