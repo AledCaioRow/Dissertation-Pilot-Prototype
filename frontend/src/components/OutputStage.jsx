@@ -3,7 +3,10 @@ import { useEffect, useState } from "react";
 // Shared result stage for output-1/2/3. Held CONSTANT across conditions — only
 // the interface before it varies, so this screen is identical for all three.
 // Fed by /api/finalize via the `result` prop:
-//   { explanation, confidence, sql, columns, preview_rows, total_count }
+//   { explanation, confidence, sql, queries: [{ sql, columns, preview_rows, total_count }],
+//     columns, preview_rows, total_count }
+// `queries` may hold more than one result table (the model can emit several
+// SELECTs); the single-result fields mirror the first query for older callers.
 
 const TEAL = "#156082";
 const LIGHT = "#E8E8E8";
@@ -46,7 +49,13 @@ export default function OutputStage({ result, loading, error, onLog }) {
 
   if (!result) return <div style={wrap} />;
 
-  const { explanation, confidence, sql, columns = [], preview_rows = [], total_count = 0 } = result;
+  const { explanation, confidence, sql } = result;
+  // Normalise to a list of result tables. Prefer `queries`; fall back to the
+  // single-result fields so older finalize payloads still render.
+  const queries = (result.queries && result.queries.length)
+    ? result.queries
+    : [{ sql, columns: result.columns || [], preview_rows: result.preview_rows || [], total_count: result.total_count || 0 }];
+  const multi = queries.length > 1;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%", gap: 14, color: BLACK }}>
@@ -82,42 +91,57 @@ export default function OutputStage({ result, loading, error, onLog }) {
         )}
       </div>
 
-      {/* result rows (scrollable, up to 15) */}
-      <div style={{ flex: "1 1 auto", minHeight: 0, display: "flex", flexDirection: "column" }}>
-        <div style={label}>Results</div>
-        <div style={{ flex: "1 1 auto", minHeight: 80, overflow: "auto", border: BORDER, background: WHITE }}>
-          {columns.length === 0 ? (
-            <div style={{ padding: 16, fontSize: 15 }}>No columns returned.</div>
-          ) : (
-            <table style={{ borderCollapse: "collapse", width: "100%", fontSize: 14 }}>
-              <thead>
-                <tr>
+      {/* result rows (scrollable, up to 15 per query) */}
+      <div style={{ flex: "1 1 auto", minHeight: 0, display: "flex", flexDirection: "column", gap: 14, overflowY: multi ? "auto" : "visible" }}>
+        <div style={label}>{multi ? `Results (${queries.length} tables)` : "Results"}</div>
+        {queries.map((qr, qi) => (
+          <ResultTable key={qi} index={qi} total={queries.length} query={qr} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// One result table for a single SELECT. Several may be shown when the model
+// emitted more than one query.
+function ResultTable({ index, total, query }) {
+  const { columns = [], preview_rows = [], total_count = 0 } = query;
+  const multi = total > 1;
+  return (
+    <div style={{ display: "flex", flexDirection: "column", flex: multi ? "0 0 auto" : "1 1 auto", minHeight: multi ? "auto" : 80 }}>
+      {multi && <div style={{ ...label, marginBottom: 4 }}>Table {index + 1} of {total}</div>}
+      <div style={{ flex: multi ? "0 0 auto" : "1 1 auto", minHeight: 80, maxHeight: multi ? 240 : "none", overflow: "auto", border: BORDER, background: WHITE }}>
+        {columns.length === 0 ? (
+          <div style={{ padding: 16, fontSize: 15 }}>No columns returned.</div>
+        ) : (
+          <table style={{ borderCollapse: "collapse", width: "100%", fontSize: 14 }}>
+            <thead>
+              <tr>
+                {columns.map((c) => (
+                  <th key={c} style={th}>{c}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {preview_rows.map((row, i) => (
+                <tr key={i} style={{ background: i % 2 ? "#f4f4f4" : WHITE }}>
                   {columns.map((c) => (
-                    <th key={c} style={th}>{c}</th>
+                    <td key={c} style={td}>{formatCell(row[c])}</td>
                   ))}
                 </tr>
-              </thead>
-              <tbody>
-                {preview_rows.map((row, i) => (
-                  <tr key={i} style={{ background: i % 2 ? "#f4f4f4" : WHITE }}>
-                    {columns.map((c) => (
-                      <td key={c} style={td}>{formatCell(row[c])}</td>
-                    ))}
-                  </tr>
-                ))}
-                {preview_rows.length === 0 && (
-                  <tr><td style={td} colSpan={columns.length}>No rows matched.</td></tr>
-                )}
-              </tbody>
-            </table>
-          )}
-        </div>
-        <div style={{ fontSize: 14, marginTop: 6, fontWeight: 700 }}>
-          Total returned: {total_count}
-          {total_count > preview_rows.length && (
-            <span style={{ fontWeight: 400, color: "#444" }}> (showing first {preview_rows.length})</span>
-          )}
-        </div>
+              ))}
+              {preview_rows.length === 0 && (
+                <tr><td style={td} colSpan={columns.length}>No rows matched.</td></tr>
+              )}
+            </tbody>
+          </table>
+        )}
+      </div>
+      <div style={{ fontSize: 14, marginTop: 6, fontWeight: 700 }}>
+        Total returned: {total_count}
+        {total_count > preview_rows.length && (
+          <span style={{ fontWeight: 400, color: "#444" }}> (showing first {preview_rows.length})</span>
+        )}
       </div>
     </div>
   );

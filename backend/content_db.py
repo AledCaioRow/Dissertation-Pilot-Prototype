@@ -42,16 +42,53 @@ def _readonly_connection() -> sqlite3.Connection:
     return conn
 
 
+def split_statements(sql: str) -> list:
+    """Split a SQL string into individual statements on top-level semicolons.
+
+    Single-quoted string literals (with doubled '' escapes) are respected so a
+    ';' inside a literal does not split a statement. Blank fragments are dropped,
+    so a trailing semicolon is harmless.
+    """
+    statements = []
+    buf = []
+    in_str = False
+    i = 0
+    while i < len(sql):
+        ch = sql[i]
+        if ch == "'":
+            buf.append(ch)
+            if in_str and i + 1 < len(sql) and sql[i + 1] == "'":
+                buf.append(sql[i + 1])  # escaped quote inside a literal
+                i += 2
+                continue
+            in_str = not in_str
+            i += 1
+            continue
+        if ch == ";" and not in_str:
+            statements.append("".join(buf))
+            buf = []
+            i += 1
+            continue
+        buf.append(ch)
+        i += 1
+    if buf:
+        statements.append("".join(buf))
+    return [s.strip() for s in statements if s.strip()]
+
+
 def validate_select(sql: str) -> str:
-    """Return a cleaned single SELECT statement or raise SQLValidationError."""
+    """Return a cleaned single SELECT statement or raise SQLValidationError.
+
+    The input must already be a single statement (no top-level ';'); use
+    ``split_statements`` first when several may be present.
+    """
     if not sql or not sql.strip():
         raise SQLValidationError("Empty SQL.")
     cleaned = sql.strip()
-    # Strip any accidental trailing semicolon, but reject genuine 2nd statements.
     if cleaned.endswith(";"):
         cleaned = cleaned[:-1].rstrip()
     if ";" in cleaned:
-        raise SQLValidationError("Only one statement is allowed (found ';').")
+        raise SQLValidationError("Each statement must be a single SELECT (found ';').")
     if "--" in cleaned or "/*" in cleaned:
         raise SQLValidationError("Comments are not allowed.")
     lowered = cleaned.lstrip("(").lstrip().lower()
@@ -62,21 +99,48 @@ def validate_select(sql: str) -> str:
     return cleaned
 
 
-def run_select(sql: str):
-    """Validate and execute a SELECT read-only.
+def _run_one(conn, cleaned: str) -> dict:
+    cur = conn.execute(cleaned)
+    columns = [d[0] for d in cur.description] if cur.description else []
+    rows = [dict(r) for r in cur.fetchall()]
+    return {
+        "sql": cleaned,
+        "columns": columns,
+        "rows": rows,                       # complete result, stored for analysis
+        "preview_rows": rows[:PREVIEW_LIMIT],  # capped for the screen
+        "total_count": len(rows),
+    }
 
-    Returns (columns, all_rows, preview_rows, total_count) where rows are lists
-    of plain dicts. ``all_rows`` is the complete result (stored for analysis),
-    ``preview_rows`` is capped at PREVIEW_LIMIT for the screen.
+
+def run_queries(sql: str) -> list:
+    """Validate and execute one or more SELECT statements read-only.
+
+    Splits ``sql`` on top-level semicolons and runs each statement in order on a
+    single read-only connection. Returns a list of result dicts, one per query,
+    each with: sql, columns, rows, preview_rows, total_count.
     """
-    cleaned = validate_select(sql)
+    statements = split_statements(sql)
+    if not statements:
+        raise SQLValidationError("Empty SQL.")
+    results = []
     conn = _readonly_connection()
     try:
-        cur = conn.execute(cleaned)
-        columns = [d[0] for d in cur.description] if cur.description else []
-        rows = [dict(r) for r in cur.fetchall()]
+        for stmt in statements:
+            results.append(_run_one(conn, validate_select(stmt)))
     finally:
         conn.close()
-    total = len(rows)
-    preview = rows[:PREVIEW_LIMIT]
-    return columns, rows, preview, total
+    return results
+
+
+def run_select(sql: str):
+    """Validate and execute a single SELECT read-only (backward-compatible).
+
+    Returns (columns, all_rows, preview_rows, total_count). Prefer
+    ``run_queries`` when more than one statement may be present.
+    """
+    conn = _readonly_connection()
+    try:
+        res = _run_one(conn, validate_select(sql))
+    finally:
+        conn.close()
+    return res["columns"], res["rows"], res["preview_rows"], res["total_count"]

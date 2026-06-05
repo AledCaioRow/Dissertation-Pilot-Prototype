@@ -210,6 +210,8 @@ export default function StudyShell() {
 
   // ---- additive study state (does not change the existing UI) ----
   const [conditionOrder, setConditionOrder] = useState(getConditionOrder());
+  const [sessionReady, setSessionReady] = useState(false); // true once the session exists
+  const [sessionError, setSessionError] = useState(null);  // surfaced if start fails
   const [questions, setQuestions] = useState(["", "", ""]); // the three written questions
   const [specs, setSpecs] = useState({});     // C2 ambiguity spec per slot
   const [dyn, setDyn] = useState({});         // C3 { component_src, ambiguities } per slot
@@ -243,8 +245,8 @@ export default function StudyShell() {
     if (started.current) return;
     started.current = true;
     startSession({})
-      .then((s) => { if (s.condition_order) setConditionOrder(s.condition_order); })
-      .catch((e) => console.warn("session start failed", e)); // eslint-disable-line no-console
+      .then((s) => { if (s.condition_order) setConditionOrder(s.condition_order); setSessionReady(true); })
+      .catch((e) => { console.warn("session start failed", e); setSessionError(String(e.message || e)); }); // eslint-disable-line no-console
   }, []);
 
   useEffect(() => {
@@ -277,7 +279,10 @@ export default function StudyShell() {
         .then((r) => setDyn((d) => ({ ...d, [slot]: r })))
         .catch((e) => setDyn((d) => ({ ...d, [slot]: { component_src: "", ambiguities: [], error: String(e.message || e) } })));
     }
-  }, [screen, conditionOrder, questions]); // eslint-disable-line react-hooks/exhaustive-deps
+    // sessionReady is in the deps so this retries once the session exists: getSessionId()
+    // is module state (not React state), so without it the effect would never re-run
+    // and the interface would sit on "Preparing…" forever (the original bug).
+  }, [screen, conditionOrder, questions, sessionReady]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // End the session when the final screen is reached.
   useEffect(() => {
@@ -535,6 +540,11 @@ export default function StudyShell() {
         const cond = conditionForSlot(slot);
         const qi = questionForSlot(slot);
         const q = questions[qi] || "";
+        // Wait for the session before mounting any interface — the first API call
+        // each one makes needs a session_id, and the fetch effect above only fires
+        // once the session exists.
+        if (sessionError) return <Loading label={`Could not reach the server: ${sessionError}`} />;
+        if (!sessionReady || !getSessionId()) return <Loading label="Preparing your session…" />;
         if (cond === "1") {
           return (
             <Chatbot

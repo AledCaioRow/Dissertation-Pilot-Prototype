@@ -281,24 +281,41 @@ def finalize(body: FinalizeBody):
         raise HTTPException(status_code=502, detail=f"Finaliser malformed: {exc}")
 
     try:
-        columns, all_rows, preview, total = content_db.run_select(sql)
+        queries = content_db.run_queries(sql)
     except content_db.SQLValidationError as exc:
         raise HTTPException(status_code=422, detail=f"Rejected SQL: {exc}")
     except Exception as exc:
         raise HTTPException(status_code=422, detail=f"SQL failed to run: {exc}")
 
+    combined_sql = ";\n".join(q["sql"] for q in queries)
+    total_rows = sum(q["total_count"] for q in queries)
     store.save_response(
         body.session_id, body.question_index, body.condition,
-        explanation, confidence, sql, total,
-        result_json={"columns": columns, "rows": all_rows},
+        explanation, confidence, combined_sql, total_rows,
+        result_json={"queries": [
+            {"sql": q["sql"], "columns": q["columns"], "rows": q["rows"]} for q in queries
+        ]},
     )
+
+    first = queries[0]
     return {
         "explanation": explanation,
         "confidence": confidence,
-        "sql": sql,
-        "columns": columns,
-        "preview_rows": preview,
-        "total_count": total,
+        "sql": combined_sql,
+        # One entry per SELECT; the output stage renders a table for each.
+        "queries": [
+            {
+                "sql": q["sql"],
+                "columns": q["columns"],
+                "preview_rows": q["preview_rows"],
+                "total_count": q["total_count"],
+            }
+            for q in queries
+        ],
+        # Backward-compatible single-result fields (the first query).
+        "columns": first["columns"],
+        "preview_rows": first["preview_rows"],
+        "total_count": first["total_count"],
     }
 
 

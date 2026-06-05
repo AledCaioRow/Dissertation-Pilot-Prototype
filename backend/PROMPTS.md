@@ -38,13 +38,14 @@ DATABASE: student_club (SQLite). The following is the only thing you know about 
 
 ### `OUTPUT_CONTRACT` (used in the finaliser turn)
 ```
-EXPLANATION: <one plain-English paragraph, 50 words or fewer, saying what the query returns and how it matches the question. No SQL jargon.>
-CONFIDENCE: <a single integer 0-100, your rough confidence the query correctly answers the question>
+EXPLANATION: <one plain-English paragraph, 50 words or fewer, saying what the queries return and how they match the question. No SQL jargon.>
+CONFIDENCE: <a single integer 0-100, your rough confidence the queries correctly answer the question>
 SQL:
-<one {{SQL_DIALECT}} SELECT statement that answers the question, as the very last thing in your response>
+<one or more {{SQL_DIALECT}} SELECT statements that answer the question, as the very last thing in your response>
 
 SQL rules:
-- Exactly one statement, SELECT only. No INSERT/UPDATE/DELETE/CREATE/PRAGMA, no second statement, no comments, no markdown fences.
+- SELECT statements only. No INSERT/UPDATE/DELETE/CREATE/PRAGMA, no comments, no markdown fences.
+- Prefer a single statement. Use more than one ONLY when the question genuinely cannot be answered by one query (for example comparing two groups that cannot be combined). Separate each statement with a semicolon (;). Each result is shown in its own table in the order written.
 - Use only tables and columns from the schema; join on the foreign keys shown.
 - Do not add LIMIT unless the question asks for a specific number; a preview is shown separately.
 - Write nothing after the SQL.
