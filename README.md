@@ -13,10 +13,6 @@ Two turns per condition in one context window: the first turn differs by conditi
 the SQL. Same model at temperature 0 for every call. The frozen `DB_CONTEXT.md` is
 injected verbatim into every call so no condition is better-informed.
 
-> Note: the pre-existing `app.py` Auto-MPG Streamlit demo at the repo root is left
-> untouched and is unrelated to this study instrument, which lives under
-> `backend/` and `frontend/`.
-
 ## Layout
 ```
 backend/    FastAPI app, prompts (verbatim from PROMPTS.md), read-only content DB,
