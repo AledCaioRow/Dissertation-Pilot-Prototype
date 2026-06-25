@@ -25,22 +25,45 @@ things for you:
 
 ---
 
-## Before you start — 3 things you need
+## Part 1 — Get set up (one-time, ~10 minutes)
 
-1. **The code on GitHub** — done. It's on the `online-version` branch of your
-   repository.
-2. **An Anthropic API key** — this is what powers the model. Get one at
-   <https://console.anthropic.com> → *API Keys*. It looks like `sk-ant-...`.
-   Treat it like a password.
-3. **A Render account** — free to create at <https://render.com>. Sign up with
-   your GitHub account so Render can see your repository.
+You need three things. The first is already done; the other two are free
+accounts you create once.
+
+### 1. The code on GitHub ✅ (already done)
+It's on the **`online-version`** branch of your repository — nothing to do here.
+
+### 2. An Anthropic API key (this powers the model)
+This is the key that lets the study talk to the Claude model.
+
+1. Go to <https://console.anthropic.com> and sign up or log in.
+2. Add a little credit: open **Billing** (or **Plans**) and add a payment method
+   / buy credits. The model is **pay-as-you-go** and is *separate* from the free
+   Render hosting — for a pilot it's usually only **a few pounds**. (Without any
+   credit, the model steps in the study will error.)
+3. Open **API Keys** → **Create Key**, give it any name, and **copy** the value.
+   It looks like `sk-ant-...`. Treat it like a password — you'll paste it into
+   Render in Part 2. If you lose it, just create another one.
+
+### 3. A Render account (this hosts the website)
+Render is the service that turns the code into a live website.
+
+1. Go to <https://render.com> and click **Get Started** / **Sign up**.
+2. Choose **Sign up with GitHub** and log in to GitHub if asked.
+3. When GitHub asks, **authorise Render** to access your repositories — you can
+   limit it to just `Dissertation-Pilot-Prototype`. This is what lets Render see
+   your code in Part 2.
+
+That's the setup. Everything from here is clicking buttons.
 
 ---
 
 ## What this costs: £0 for now
 
-`render.yaml` is set to Render's **free** plans, so deploying costs **nothing**.
-That's ideal for building it and testing. Two things to know about Free:
+`render.yaml` is set to Render's **free** plans, so the **hosting** costs
+**nothing**. (The Claude model itself is pay-as-you-go on your Anthropic account
+— see Part 1 — usually just a few pounds for a pilot.) That's ideal for building
+it and testing. Two things to know about the free hosting:
 
 | Piece | On Free | What that means |
 | --- | --- | --- |
@@ -54,27 +77,38 @@ For **real participant sessions** later, upgrade to the small paid plans
 
 ---
 
-## Step-by-step: deploy on Render
+## Part 2 — Make the website (deploy)
 
-1. Go to <https://dashboard.render.com> and log in.
-2. Click **New +** (top right) → **Blueprint**.
-3. Choose your repository (`Dissertation-Pilot-Prototype`). If you don't see it,
-   click *Configure account* and give Render access to the repo.
-4. When asked for the **branch**, choose **`online-version`**.
-5. Render reads `render.yaml` and shows **two resources**:
-   * `student-club-study` (the website), and
-   * `student-club-study-db` (the database).
+This one process creates the live website **and** its database together. It
+takes ~10 minutes, mostly waiting.
 
-   Click **Apply** / **Create**.
-6. Render will ask you to fill in the secret value it needs:
-   * **ANTHROPIC_API_KEY** → paste your `sk-ant-...` key.
-   (You don't need to touch the others — `ADMIN_TOKEN` is generated for you, and
-   the database connection is wired up automatically.)
-7. Click **Apply** / **Deploy** and wait. The first build takes about
-   **5–10 minutes** (it builds the app and creates the database). You're done
-   when the website shows **"Live"**.
+1. Go to <https://dashboard.render.com> (you'll already be logged in from
+   Part 1).
+2. Click **New +** (top-right) → **Blueprint**.
+3. Find and select your repository, **`Dissertation-Pilot-Prototype`**. If it's
+   not listed, click **Configure account** / **Configure in GitHub**, give
+   Render access to it, then come back.
+4. For **Branch**, choose **`online-version`** (not `main`). This matters — the
+   website's configuration lives on that branch.
+5. Render reads the project's `render.yaml` and shows the **two resources** it's
+   about to create:
+   * `student-club-study` — the website, and
+   * `student-club-study-db` — the database.
 
-That's it — Render shows your web address near the top of the service page.
+   Click **Apply** (sometimes labelled **Create** or **Deploy Blueprint**).
+6. Render asks you to fill in the one secret it needs:
+   * **ANTHROPIC_API_KEY** → paste the `sk-ant-...` key from Part 1.
+
+   You don't need to set anything else — `ADMIN_TOKEN` is generated for you and
+   the database is connected automatically.
+7. Confirm, and **wait**. The first build takes about **5–10 minutes** while
+   Render builds the app and creates the database. You can watch the log scroll;
+   it's ready when the website's status turns **"Live"** (green).
+
+**You now have a website.** Render shows its address near the top of the
+`student-club-study` page — something like
+`https://student-club-study.onrender.com`. That link *is* your study; the next
+section confirms it works.
 
 ---
 
