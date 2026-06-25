@@ -1,0 +1,24 @@
+# Keep the build context small and never ship local artifacts or secrets.
+.git
+.gitignore
+**/__pycache__
+**/*.pyc
+**/.venv
+**/venv
+**/node_modules
+frontend/dist
+backend/logs/*.sqlite
+backend/logs/*.sqlite-*
+backend/logs/*.jsonl
+backend/logs/csv
+
+# Secrets — never bake these into the image (note: .env.production is NOT a
+# secret; it only holds the empty VITE_API_BASE and must be copied in).
+**/.env
+**/.env.local
+**/.env.*.local
+
+.DS_Store
+*.log
+DEPLOY.md
+README.md

@@ -13,12 +13,19 @@ auditable.
 import json
 import os
 import re
+import secrets
+import sqlite3
+import tempfile
 import uuid
+from pathlib import Path
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+from starlette.background import BackgroundTask
 from typing import Any, Optional
 
 load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
@@ -347,3 +354,60 @@ def session_demographics(body: DemographicsBody):
 def session_end(body: SessionEnd):
     store.end_session(body.session_id)
     return {"ok": True}
+
+
+# --------------------------------------------------------------------------- #
+# Admin: download the collected study data (opt-in; off unless ADMIN_TOKEN set)
+# --------------------------------------------------------------------------- #
+@app.get("/api/admin/export")
+def admin_export(token: str = ""):
+    """Download a consistent snapshot of the logging DB as a single file.
+
+    Disabled (404) unless ADMIN_TOKEN is set in the environment. This lets a
+    researcher pull their data off the host from a browser, without needing a
+    shell. Keep ADMIN_TOKEN long and secret — anyone with it can read all
+    participant data.
+    """
+    admin = os.getenv("ADMIN_TOKEN")
+    if not admin:
+        raise HTTPException(status_code=404, detail="Not found.")
+    if not token or not secrets.compare_digest(token, admin):
+        raise HTTPException(status_code=403, detail="Invalid or missing token.")
+    if not store.LOG_DB_PATH.exists():
+        raise HTTPException(status_code=404, detail="No data has been collected yet.")
+
+    # Snapshot via the SQLite backup API so the copy is consistent and includes
+    # any not-yet-checkpointed WAL data, without disturbing the live DB.
+    tmp = tempfile.NamedTemporaryFile(prefix="study_logs_", suffix=".sqlite", delete=False)
+    tmp.close()
+    src = sqlite3.connect(f"file:{store.LOG_DB_PATH}?mode=ro", uri=True)
+    try:
+        dst = sqlite3.connect(tmp.name)
+        try:
+            src.backup(dst)
+        finally:
+            dst.close()
+    finally:
+        src.close()
+
+    return FileResponse(
+        tmp.name,
+        media_type="application/octet-stream",
+        filename="study_logs.sqlite",
+        background=BackgroundTask(lambda: os.path.exists(tmp.name) and os.remove(tmp.name)),
+    )
+
+
+# --------------------------------------------------------------------------- #
+# Static frontend (combined deployment)
+# --------------------------------------------------------------------------- #
+# In a deployed build the compiled React app lives next to the backend and is
+# served from this same origin, so participants get one URL and there is no
+# CORS. In local dev the dist folder is absent, so this mount is skipped and
+# only the API runs (the Vite dev server serves the UI on :5173). This mount is
+# registered last so every /api/* route above takes precedence over it.
+_FRONTEND_DIST = Path(
+    os.getenv("FRONTEND_DIST", Path(__file__).resolve().parent.parent / "frontend" / "dist")
+)
+if _FRONTEND_DIST.is_dir():
+    app.mount("/", StaticFiles(directory=str(_FRONTEND_DIST), html=True), name="frontend")

@@ -1,0 +1,43 @@
+# Render Blueprint — deploys the whole study as ONE web service that serves the
+# React app and the API together (one URL, no CORS). Render reads this file when
+# you create a "Blueprint" from this repo. See DEPLOY.md for the click-by-click
+# guide, and https://render.com/docs/blueprint-spec for the full reference.
+services:
+  - type: web
+    name: student-club-study
+    runtime: docker
+    # The branch Render builds and auto-deploys from. Change this if you later
+    # merge the online version into main (or another branch).
+    branch: online-version
+    dockerfilePath: ./Dockerfile
+    # The Free plan has NO persistent disk and wipes its filesystem on every
+    # restart/deploy — that would lose participant data. "starter" (~$7/mo) is
+    # the cheapest plan that supports the disk below. To trial it for free
+    # instead, set `plan: free` and delete the whole `disk:` block (your data is
+    # then only kept until the next restart — fine for testing, not for a study).
+    plan: starter
+    # Where the service runs. Frankfurt keeps participant data in the EU (good
+    # for GDPR). If you're elsewhere, change to e.g. oregon, ohio, or singapore.
+    region: frankfurt
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      # REQUIRED. Paste your real key in the Render dashboard — never in git.
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      # Lets you download the collected data from a browser at
+      #   https://<your-app>.onrender.com/api/admin/export?token=<this value>
+      # Render generates a strong random value; find it under the service's
+      # Environment tab after the first deploy.
+      - key: ADMIN_TOKEN
+        generateValue: true
+      # The model every condition uses (see backend/llm.py). Optional override.
+      - key: STUDY_MODEL
+        value: claude-sonnet-4-6
+      # Write participant logs onto the persistent disk mounted below.
+      - key: STUDY_LOG_DIR
+        value: /data/logs
+    disk:
+      name: study-data
+      mountPath: /data
+      sizeGB: 1

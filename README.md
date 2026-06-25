@@ -13,12 +13,20 @@ Two turns per condition in one context window: the first turn differs by conditi
 the SQL. Same model at temperature 0 for every call. The frozen `DB_CONTEXT.md` is
 injected verbatim into every call so no condition is better-informed.
 
+## Run it online (one link for participants)
+To deploy the study as a single website participants can open — no local setup —
+see **[DEPLOY.md](DEPLOY.md)**. It's a plain-English, click-by-click guide for
+hosting on Render using the included `Dockerfile` and `render.yaml`. The backend
+serves the built frontend and the API from the same origin, and participant data
+is written to a persistent disk. The sections below are for running it locally.
+
 ## Layout
 ```
 backend/    FastAPI app, prompts (verbatim from PROMPTS.md), read-only content DB,
             logging system, smoke test + CSV export
 frontend/   Vite + React study shell (StudyShell), the C2 wizard, the C1 chatbot,
             the sandboxed C3 host, and the shared output stage
+Dockerfile, render.yaml, DEPLOY.md   one-service online deployment (see above)
 ```
 
 ## Backend — run steps
