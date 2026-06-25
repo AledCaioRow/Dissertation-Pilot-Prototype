@@ -37,22 +37,20 @@ things for you:
 
 ---
 
-## One decision first: the cost
+## What this costs: £0 for now
 
-For **real participants**, use the small paid plans so your data is safe and the
-site stays awake. Two cheap pieces:
+`render.yaml` is set to Render's **free** plans, so deploying costs **nothing**.
+That's ideal for building it and testing. Two things to know about Free:
 
-| Piece | Recommended | Monthly cost | If you pick Free instead |
-| --- | --- | --- | --- |
-| **Website** (web service) | Starter | ~$7 | Free works, but the site "sleeps" after 15 min idle and takes ~30–60s to wake. |
-| **Database** (Postgres) | Basic-256MB | ~$6 | A Free database exists for testing, but Render **deletes it after ~30 days**. |
+| Piece | On Free | What that means |
+| --- | --- | --- |
+| **Website** | sleeps when idle | After ~15 min with no visitors it sleeps; the next visit takes ~30–60s to wake, then it's normal. |
+| **Database** | **deleted after ~30 days** | Render removes a free database about 30 days after you create it. **Before then**, either upgrade it (keeps your data) or export your data — otherwise it's lost. |
 
-So roughly **~$13/month** for a dependable setup, or **$0** for short testing
-(with the limits above). `render.yaml` is already set to the recommended paid
-plans; a note at the end explains how to switch to Free.
-
-> Tip: you only need to pay while you're actually collecting data. You can
-> downgrade or delete the services afterwards (export your data first!).
+For **real participant sessions** later, upgrade to the small paid plans
+(~$13/month total) so the site stays awake and your data is kept safely — see
+**[Upgrade to the paid version](#upgrade-to-the-paid-version)** below. It's a
+2-minute change and you only pay while you're collecting data.
 
 ---
 
@@ -155,16 +153,29 @@ database — updates don't touch it. You don't have to repeat the setup.
 
 ---
 
-## If you'd rather trial it for free (with limits)
+## Upgrade to the paid version
 
-Edit `render.yaml` before deploying (or change the plans in Render's dashboard):
+When you're ready for real participants — no sleeping, and your data kept beyond
+30 days — upgrade the two pieces. **Do the database first**, and do it **before
+the free database's ~30-day expiry** so nothing is lost. Upgrading keeps the same
+database and all its data; nothing is wiped.
 
-* website: change `plan: starter` to `plan: free`;
-* database: change `plan: basic-256mb` to `plan: free`.
+Easiest way (no files to edit):
 
-Everything else is the same. Just remember the free limits: the site sleeps when
-idle, and the **free database is deleted after ~30 days**, so export your data
-regularly and don't rely on it for the final study.
+1. **Database → paid.** Render dashboard → open **`student-club-study-db`** →
+   **Settings** (look for the plan / *Upgrade* button) → pick a **Basic** plan
+   (Basic-256MB, ~$6/mo, is plenty) → confirm. Your data stays.
+2. **Website → no sleeping.** Render dashboard → open the **`student-club-study`**
+   web service → **Settings** → **Instance Type / Plan** → change **Free** to
+   **Starter** (~$7/mo) → confirm. It redeploys and stops sleeping.
+
+That's about **~$13/month** total, only while you're collecting data — you can
+downgrade or delete afterwards (export your data first).
+
+> Prefer to keep the setting in the project? Change the two `plan:` lines in
+> `render.yaml` — `free` → `starter` for the website, and `free` → `basic-256mb`
+> for the database — then push. Render redeploys on the paid plans. Or just ask
+> me and I'll make that change for you.
 
 ---
 

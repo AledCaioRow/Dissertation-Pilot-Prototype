@@ -11,10 +11,10 @@ services:
     # merge the online version into main (or another branch).
     branch: online-version
     dockerfilePath: ./Dockerfile
-    # "starter" keeps the web service awake (the Free plan sleeps after 15 min
-    # idle and is slow to wake). Participant data lives in Postgres below, not on
-    # this service's disk, so no persistent disk is needed here.
-    plan: starter
+    # FREE plan for now (£0). A free web service SLEEPS after ~15 min idle and is
+    # slow to wake (~30–60s). To make it dependable later, switch this to
+    # `starter` (~$7/mo) — see "Upgrade to the paid version" in DEPLOY.md.
+    plan: free
     # Keep the web service and database in the same region. Frankfurt keeps data
     # in the EU (good for GDPR). If you're elsewhere, change BOTH to e.g. oregon.
     region: frankfurt
@@ -43,8 +43,9 @@ databases:
   - name: student-club-study-db
     databaseName: study_logs
     user: study_user
-    # Cheapest paid Postgres plan (~$6/mo) — keeps your data and offers backups.
-    # A Free database also exists for testing but Render expires it after ~30
-    # days; if Render rejects this value, pick any "Basic" plan in the dashboard.
-    plan: basic-256mb
+    # FREE database for now (£0). IMPORTANT: Render DELETES a free database about
+    # 30 days after it is created. Before then, upgrade it to a paid plan (e.g.
+    # basic-256mb, ~$6/mo) — which keeps all your data — or export your data, or
+    # it will be lost. See "Upgrade to the paid version" in DEPLOY.md.
+    plan: free
     region: frankfurt
