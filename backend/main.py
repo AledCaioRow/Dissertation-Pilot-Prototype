@@ -14,18 +14,15 @@ import json
 import os
 import re
 import secrets
-import sqlite3
-import tempfile
 import uuid
 from pathlib import Path
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-from starlette.background import BackgroundTask
 from typing import Any, Optional
 
 load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
@@ -169,7 +166,12 @@ def _extract_json(text: str):
 # --------------------------------------------------------------------------- #
 @app.get("/api/health")
 def health():
-    return {"ok": True, "model": llm.MODEL}
+    db_ok = store.ping()
+    return {
+        "ok": db_ok,
+        "model": llm.MODEL,
+        "database": "connected" if db_ok else "disconnected",
+    }
 
 
 @app.post("/api/session/start")
@@ -361,40 +363,24 @@ def session_end(body: SessionEnd):
 # --------------------------------------------------------------------------- #
 @app.get("/api/admin/export")
 def admin_export(token: str = ""):
-    """Download a consistent snapshot of the logging DB as a single file.
+    """Download all collected study data as a .zip of CSV files (one per table).
 
     Disabled (404) unless ADMIN_TOKEN is set in the environment. This lets a
     researcher pull their data off the host from a browser, without needing a
-    shell. Keep ADMIN_TOKEN long and secret — anyone with it can read all
-    participant data.
+    shell, and works the same whether the data is in SQLite or Postgres. Keep
+    ADMIN_TOKEN long and secret — anyone with it can read all participant data.
     """
     admin = os.getenv("ADMIN_TOKEN")
     if not admin:
         raise HTTPException(status_code=404, detail="Not found.")
     if not token or not secrets.compare_digest(token, admin):
         raise HTTPException(status_code=403, detail="Invalid or missing token.")
-    if not store.LOG_DB_PATH.exists():
-        raise HTTPException(status_code=404, detail="No data has been collected yet.")
 
-    # Snapshot via the SQLite backup API so the copy is consistent and includes
-    # any not-yet-checkpointed WAL data, without disturbing the live DB.
-    tmp = tempfile.NamedTemporaryFile(prefix="study_logs_", suffix=".sqlite", delete=False)
-    tmp.close()
-    src = sqlite3.connect(f"file:{store.LOG_DB_PATH}?mode=ro", uri=True)
-    try:
-        dst = sqlite3.connect(tmp.name)
-        try:
-            src.backup(dst)
-        finally:
-            dst.close()
-    finally:
-        src.close()
-
-    return FileResponse(
-        tmp.name,
-        media_type="application/octet-stream",
-        filename="study_logs.sqlite",
-        background=BackgroundTask(lambda: os.path.exists(tmp.name) and os.remove(tmp.name)),
+    data = store.export_csv_zip()
+    return Response(
+        content=data,
+        media_type="application/zip",
+        headers={"Content-Disposition": 'attachment; filename="study_export.zip"'},
     )
 
 

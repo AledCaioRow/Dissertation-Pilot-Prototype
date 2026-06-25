@@ -21,8 +21,7 @@ RUN npm run build
 FROM python:3.12-slim AS app
 ENV PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
-    FRONTEND_DIST=/app/frontend/dist \
-    STUDY_LOG_DIR=/data/logs
+    FRONTEND_DIST=/app/frontend/dist
 WORKDIR /app/backend
 COPY backend/requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt

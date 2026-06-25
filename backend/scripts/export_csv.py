@@ -1,45 +1,39 @@
 """Dump every logging table to CSV for pandas/R.
 
+Reads from the same database the app uses: a local SQLite file by default, or
+Postgres when DATABASE_URL is set (e.g. point it at your Render database's
+external connection string to pull the data locally).
+
 Usage:  python scripts/export_csv.py [out_dir]
-Defaults to ./logs/csv .
+Defaults to <STUDY_LOG_DIR>/csv .
 """
 
 import csv
-import sqlite3
 import sys
 from pathlib import Path
 
-HERE = Path(__file__).resolve().parent.parent
-LOG_DB = HERE / "logs" / "study_logs.sqlite"
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-TABLES = [
-    "sessions", "questions", "model_calls", "responses",
-    "resolution_logs", "dynamic_ui", "feedback", "events",
-]
+from sqlalchemy import text  # noqa: E402
+
+import store  # noqa: E402
 
 
 def main():
-    out_dir = Path(sys.argv[1]) if len(sys.argv) > 1 else HERE / "logs" / "csv"
+    out_dir = Path(sys.argv[1]) if len(sys.argv) > 1 else store.LOG_DIR / "csv"
     out_dir.mkdir(parents=True, exist_ok=True)
-    if not LOG_DB.exists():
-        raise SystemExit(f"No logging DB at {LOG_DB}")
-    conn = sqlite3.connect(LOG_DB)
-    conn.row_factory = sqlite3.Row
-    for t in TABLES:
-        rows = conn.execute(f"SELECT * FROM {t}").fetchall()
-        path = out_dir / f"{t}.csv"
-        with open(path, "w", newline="", encoding="utf-8") as fh:
-            writer = csv.writer(fh)
-            if rows:
-                writer.writerow(rows[0].keys())
+    with store.engine.connect() as conn:
+        for t in store.EXPORT_TABLES:
+            result = conn.execute(text(f"SELECT * FROM {t}"))
+            cols = list(result.keys())
+            rows = result.fetchall()
+            path = out_dir / f"{t}.csv"
+            with open(path, "w", newline="", encoding="utf-8") as fh:
+                writer = csv.writer(fh)
+                writer.writerow(cols)
                 for r in rows:
                     writer.writerow(list(r))
-            else:
-                # still emit a header row from the table's columns
-                cols = [c[1] for c in conn.execute(f"PRAGMA table_info({t})")]
-                writer.writerow(cols)
-        print(f"wrote {path}  ({len(rows)} rows)")
-    conn.close()
+            print(f"wrote {path}  ({len(rows)} rows)")
 
 
 if __name__ == "__main__":

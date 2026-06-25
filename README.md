@@ -18,7 +18,8 @@ To deploy the study as a single website participants can open — no local setup
 see **[DEPLOY.md](DEPLOY.md)**. It's a plain-English, click-by-click guide for
 hosting on Render using the included `Dockerfile` and `render.yaml`. The backend
 serves the built frontend and the API from the same origin, and participant data
-is written to a persistent disk. The sections below are for running it locally.
+is stored in a managed Postgres database. The sections below are for running it
+locally.
 
 ## Layout
 ```
@@ -38,12 +39,15 @@ cp .env.example .env          # then put your real ANTHROPIC_API_KEY in .env
 uvicorn main:app --reload --port 8000
 ```
 The content DB (`backend/data/student_club.sqlite`) is opened **read-only**; the
-finaliser's SQL is validated as a single SELECT before it runs. Logs are written
-write-through to `backend/logs/study_logs.sqlite` and mirrored to
+finaliser's SQL is validated as a single SELECT before it runs. Participant logs
+go to a SQL database via SQLAlchemy — a local SQLite file
+(`backend/logs/study_logs.sqlite`) by default, or Postgres when `DATABASE_URL`
+is set (the deployed version) — and every event is also mirrored to
 `backend/logs/events.jsonl`.
 
 Useful env vars (see `.env.example`): `STUDY_MODEL` (default `claude-sonnet-4-6`),
-`STUDENT_CLUB_DB`, `STUDY_LOG_DIR`, `CORS_ORIGINS`.
+`DATABASE_URL` (Postgres; unset = local SQLite), `STUDENT_CLUB_DB`,
+`STUDY_LOG_DIR`, `CORS_ORIGINS`.
 
 ### Self-verification (requires ANTHROPIC_API_KEY)
 ```bash
